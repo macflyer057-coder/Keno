@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0d1b2a">
-<link rel="manifest" href="/keno/manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Keno FDJ">
-
 <title>Keno FDJ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -86,6 +80,14 @@ input:focus { border-color: #f5c842; }
 .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5a7a9a; }
 .leg-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 
+
+.btn.vert { background: #1a5c2e; color: #6ee89a; border-color: #2ecc71; font-weight: bold; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.status-bar { padding: 9px 12px; border-radius: 8px; font-size: 12px; margin-top: 8px; }
+.status-bar.loading { background: rgba(245,200,66,.10); color: #f5c842; border: 1px solid rgba(245,200,66,.25); }
+.status-bar.success { background: rgba(46,204,113,.10); color: #7de8a8; border: 1px solid rgba(46,204,113,.25); }
+.status-bar.error   { background: rgba(231,76,60,.10);  color: #ff9c92; border: 1px solid rgba(231,76,60,.25); }
+
 /* VIDE */
 .vide { text-align: center; color: #5a7a9a; font-size: 13px; padding: 20px; }
 </style>
@@ -101,9 +103,9 @@ input:focus { border-color: #f5c842; }
 <div class="screen on" id="s-tirage">
   <div class="card">
     <div class="card-title">Tirage FDJ</div>
-    <button class="btn or" onclick="recupererTirage()" style="width:100%;padding:12px;font-size:14px;margin-bottom:10px">🌐 Récupérer le dernier tirage</button>
-    <div id="status-auto" style="font-size:12px;margin:6px 0 8px;color:#5a7a9a"></div>
-    <div style="font-size:11px;color:#5a7a9a;margin-bottom:8px;text-align:center">— ou saisie manuelle —</div>
+    <button class="btn vert" id="btn-auto" onclick="recupererTirage(this)" style="width:100%;padding:13px;font-size:14px;margin-bottom:10px">&#127758; Récupérer le dernier tirage automatiquement</button>
+    <div id="status-auto"></div>
+    <div style="font-size:11px;color:#5a7a9a;margin:10px 0 8px;text-align:center">&#8212; ou saisie manuelle &#8212;</div>
     <input type="text" id="inp-tirage" placeholder="Ex : 3, 7, 12, 19, 25, 31, 38..." oninput="majTirage()">
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
       <input type="number" id="inp-chance" min="1" max="70" placeholder="N° chance" style="width:130px" oninput="majTirage()">
@@ -184,6 +186,54 @@ input:focus { border-color: #f5c842; }
 </div>
 
 <script>
+
+function setStatus(type, msg) {
+  var el = document.getElementById('status-auto');
+  el.innerHTML = msg ? '<div class="status-bar ' + type + '">' + msg + '</div>' : '';
+}
+
+function recupererTirage(btn) {
+  btn.disabled = true;
+  setStatus('loading', '&#9203; Connexion a FDJ en cours...');
+  var url = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://www.fdj.fr/jeux-de-tirage/keno/resultats');
+  fetch(url)
+    .then(function(resp) {
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.text();
+    })
+    .then(function(txt) {
+      // Chercher \"numbers\":[\"14\",\"16\",...] dans le texte
+      var m = txt.match(/\\"numbers\\":\[(\\"[\d\\",]+)\]/);
+      if (!m) throw new Error('Numeros introuvables dans la page FDJ.');
+
+      var nums = m[1].match(/\d{1,2}/g)
+        .map(Number)
+        .filter(function(n){ return n >= 1 && n <= 70; })
+        .filter(function(n, i, a){ return a.indexOf(n) === i; });
+
+      if (nums.length < 10) throw new Error('Tirage incomplet : ' + nums.length + ' numeros.');
+
+      // Date
+      var idx = txt.indexOf('\\"numbers\\":[');
+      var ctx = txt.substring(Math.max(0, idx - 400), idx);
+      var dm  = ctx.match(/(\d{4}-\d{2}-\d{2})/);
+      var date = dm ? dm[1].split('-').reverse().join('/') : new Date().toLocaleDateString('fr-FR');
+
+      document.getElementById('inp-tirage').value = nums.join(', ');
+      document.getElementById('inp-date').value   = date;
+      document.getElementById('inp-chance').value = '';
+      majTirage();
+      afficherGrilles();
+
+      btn.disabled = false;
+      setStatus('success', '&#10003; ' + nums.length + ' numeros charges - tirage du ' + date);
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      setStatus('error', '&#10060; ' + e.message);
+    });
+}
+
 // --- ÉTAT ---
 var selNums = [];
 var tirageNums = [];
@@ -196,10 +246,6 @@ function charger() {
     var g = localStorage.getItem('keno_grilles');
     if (g) grilles = JSON.parse(g);
   } catch(e) { grilles = []; }
-  if (!grilles.length) {
-    grilles = [{ nom: 'Ma grille', nums: [1,7,8,10,12,26,30,39,41,53], date: new Date().toLocaleDateString('fr-FR') }];
-    enregistrer();
-  }
 }
 function enregistrer() {
   try { localStorage.setItem('keno_grilles', JSON.stringify(grilles)); } catch(e) {}
@@ -424,87 +470,6 @@ function afficherResultats() {
       }).join('')
       +'</div>';
     el.appendChild(div);
-  });
-}
-
-function setStatus(t,m){document.getElementById('status-auto').textContent=m;}
-
-function demanderNotifications(cb){
-  if(!('Notification' in window)){cb(false);return;}
-  if(Notification.permission==='granted'){cb(true);return;}
-  Notification.requestPermission().then(function(p){cb(p==='granted');});
-}
-
-function envoyerNotifLocale(matches, date){
-  var titre, corps;
-  if(matches.length >= 6){
-    titre = '🎉 Keno FDJ — '+matches.length+' numéros gagnants !';
-    corps = 'Vos numéros : '+matches.join(', ')+' — Tirage du '+date;
-  } else {
-    titre = '🎱 Keno FDJ — Tirage du '+date;
-    corps = matches.length+' numéro(s) sur 10 correspondent.';
-  }
-  new Notification(titre, {body: corps, tag:'keno-tirage'});
-}
-
-function afficherBanner(matches, date){
-  var ancien = document.getElementById('keno-banner');
-  if(ancien) ancien.remove();
-  var div = document.createElement('div');
-  div.id = 'keno-banner';
-  var bg = matches.length >= 6 ? '#1a5c2e' : '#162133';
-  var border = matches.length >= 6 ? '#2ecc71' : '#2a3f5a';
-  var emoji = matches.length >= 6 ? '🎉' : '🎱';
-  div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:'+bg+';border-bottom:2px solid '+border+';padding:14px;text-align:center;font-size:15px;color:#e0e0e0;';
-  div.innerHTML = emoji+' <strong>'+matches.length+' / 10 numéros</strong> — Tirage du '+date
-    +'<br><span style="font-size:12px;color:#5a7a9a">Appuyez pour fermer</span>';
-  div.onclick = function(){ div.remove(); };
-  document.body.prepend(div);
-  if(matches.length >= 6) setTimeout(function(){ if(div.parentNode) div.style.background='#0d5c1a'; }, 500);
-}
-
-function recupererTirage(){
-  var btn=event.target;
-  btn.disabled=true;
-  setStatus('','⏳ Chargement...');
-  fetch('https://api.codetabs.com/v1/proxy?quest=https://www.fdj.fr/jeux-de-tirage/keno/resultats')
-  .then(function(r){return r.text();})
-  .then(function(t){
-    var m=t.match(/\"numbers\":\[([^\]]+)\]/);
-    if(!m){setStatus('','Introuvable');btn.disabled=false;return;}
-    var nums=m[1].match(/\d{1,2}/g).map(Number).filter(function(n){return n>=1&&n<=70;});
-    nums=nums.filter(function(n,i){return nums.indexOf(n)===i;});
-    document.getElementById('inp-tirage').value=nums.join(', ');
-    var idx=t.indexOf('\"numbers\":[');
-    var dm=t.substring(Math.max(0,idx-400),idx).match(/(\d{4}-\d{2}-\d{2})/);
-    var date = dm ? dm[1].split('-').reverse().join('/') : '';
-    if(dm) document.getElementById('inp-date').value=date;
-    majTirage(); afficherGrilles();
-    setStatus('','✅ '+nums.length+' numéros chargés');
-    btn.disabled=false;
-
-    // Comparer avec les grilles sauvegardées
-    var maGrille = grilles.length ? grilles[0].nums : [];
-    var matches = maGrille.filter(function(n){ return nums.indexOf(n) !== -1; });
-    afficherBanner(matches, date);
-    if(matches.length >= 6){
-      demanderNotifications(function(ok){
-        if(ok) envoyerNotifLocale(matches, date);
-      });
-    }
-  }).catch(function(e){setStatus('','❌ '+e.message);btn.disabled=false;});
-}
-
-// ---- Service Worker + PWA ----
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/keno/sw.js').then(function(reg){
-    // Demander permission notifications au premier lancement
-    demanderNotifications(function(){});
-    // Dire au SW de planifier l'alerte 20h15
-    if(reg.active) reg.active.postMessage({type:'SCHEDULE'});
-    navigator.serviceWorker.ready.then(function(r){
-      if(r.active) r.active.postMessage({type:'SCHEDULE'});
-    });
   });
 }
 
