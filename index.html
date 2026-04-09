@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0d1b2a">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Keno FDJ">
+
 <title>Keno FDJ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -246,6 +251,10 @@ function charger() {
     var g = localStorage.getItem('keno_grilles');
     if (g) grilles = JSON.parse(g);
   } catch(e) { grilles = []; }
+  if (!grilles.length) {
+    grilles = [{ nom: 'Ma grille', nums: [1,7,8,10,12,26,30,39,41,53], date: new Date().toLocaleDateString('fr-FR') }];
+    enregistrer();
+  }
 }
 function enregistrer() {
   try { localStorage.setItem('keno_grilles', JSON.stringify(grilles)); } catch(e) {}
@@ -480,6 +489,15 @@ var fnClick1 = function(e){ var n=parseInt(e.currentTarget.getAttribute('data-n'
 construireGrille('grille-rapide', fnClick1);
 construireGrille('grille-save', fnClick1);
 afficherGrilles();
+
+// ---- Service Worker ----
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(function(reg) {
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  });
+}
 </script>
 </body>
 </html>
