@@ -1,0 +1,41 @@
+name: Keno Tirage 20h15
+
+on:
+  schedule:
+    - cron: '15 18 * * *'  # 18h15 UTC = 20h15 CEST
+  workflow_dispatch:         # déclenchement manuel possible
+
+jobs:
+  check-tirage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer et notifier tirage Keno
+        run: |
+          RESULT=$(curl -s "https://api.codetabs.com/v1/proxy?quest=https://www.fdj.fr/jeux-de-tirage/keno/resultats")
+          NUMBERS=$(echo "$RESULT" | grep -o '\\"numbers\\":\[[^]]*\]' | grep -o '[0-9][0-9]*' | head -20 | tr '\n' ',')
+          GRILLE="1,7,8,10,12,26,30,39,41,53"
+          COUNT=0
+          MATCHED=""
+          for N in $(echo $GRILLE | tr ',' ' '); do
+            if echo ",$NUMBERS," | grep -q ",$N,"; then
+              COUNT=$((COUNT+1))
+              MATCHED="$MATCHED $N"
+            fi
+          done
+          DATE=$(date '+%d/%m/%Y')
+          if [ $COUNT -ge 6 ]; then
+            TITRE="🎉 Keno — $COUNT numéros gagnants !"
+            MSG="Vos numéros :$MATCHED — Tirage du $DATE"
+            PRIORITY="urgent"
+            TAGS="tada"
+          else
+            TITRE="🎱 Keno du $DATE"
+            MSG="$COUNT/10 numéros correspondent."
+            PRIORITY="default"
+            TAGS="dart"
+          fi
+          curl -s -X POST https://ntfy.sh/${{ secrets.NTFY_TOPIC }} \
+            -H "Title: $TITRE" \
+            -H "Priority: $PRIORITY" \
+            -H "Tags: $TAGS" \
+            -d "$MSG"
