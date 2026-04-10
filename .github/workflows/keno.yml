@@ -2,22 +2,19 @@ name: Keno Tirage 21h00
 
 on:
   schedule:
-    - cron: '0 19 * * *'  # 19h UTC = 21h CEST
+    - cron: '0 19 * * *'
   workflow_dispatch:
 
 jobs:
   check-tirage:
     runs-on: ubuntu-latest
     steps:
-      - name: Récupérer et notifier tirage Keno
+      - name: Keno FDJ 21h00
         env:
-          NTFY_TOPIC: ${ secrets.NTFY_TOPIC }
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
-          set -e
-          echo "=== Keno FDJ 21h00 ==="
           RESULT=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=https://www.fdj.fr/jeux-de-tirage/keno/resultats")
           NUMBERS=$(echo "$RESULT" | grep -o '\\"numbers\\":\[[^]]*\]' | grep -o '[0-9][0-9]*' | head -20 | tr '\n' ',')
-          echo "Tirage: $NUMBERS"
           GRILLE="1,7,8,10,12,26,30,39,41,53"
           COUNT=0
           MATCHED=""
@@ -28,29 +25,26 @@ jobs:
             fi
           done
           DATE=$(date '+%d/%m/%Y')
-
           case $COUNT in
             10) GAIN="200000€" ;;
-            9) GAIN="2000€" ;;
-            8) GAIN="200€" ;;
-            7) GAIN="15€" ;;
-            6) GAIN="5€" ;;
+            9)  GAIN="2000€" ;;
+            8)  GAIN="200€" ;;
+            7)  GAIN="15€" ;;
+            6)  GAIN="5€" ;;
             5|0) GAIN="2€" ;;
             *) GAIN="0€" ;;
           esac
-
           if [ $COUNT -ge 6 ]; then
-            TITRE="🎉 Keno — $COUNT/10 ($GAIN) !"
-            MSG="Vos numéros :$MATCHED — Tirage $DATE"
+            TITRE="🎉 $COUNT/10 ($GAIN)"
+            MSG="Numéros :$MATCHED — $DATE"
             PRIORITY="urgent"
             TAGS="tada,party"
           else
-            TITRE="🎱 Keno $DATE — $COUNT/10 ($GAIN)"
+            TITRE="🎱 $DATE — $COUNT/10 ($GAIN)"
             MSG="$GRILLE"
-            PRIORITY="low"
+            PRIORITY="default"
             TAGS="dart"
           fi
-
           echo "[$TITRE] $MSG"
           curl -fsS -X POST "https://ntfy.sh/$NTFY_TOPIC" \
             -H "Title: $TITRE" \
