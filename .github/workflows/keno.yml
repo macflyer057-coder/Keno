@@ -2,7 +2,7 @@ name: Keno Tirage 21h00
 
 on:
   schedule:
-    - cron: '0 19 * * *'
+    - cron: '0 19 * * *'  # 21h00 CEST
   workflow_dispatch:
 
 jobs:
@@ -35,10 +35,10 @@ jobs:
             *) GAIN="0€" ;;
           esac
           if [ $COUNT -ge 6 ]; then
-            TITRE="🎉 $COUNT/10 ($GAIN)"
+            TITRE="🎉 $COUNT/10 ($GAIN) !"
             MSG="Numéros :$MATCHED — $DATE"
             PRIORITY="urgent"
-            TAGS="tada,party"
+            TAGS="tada"
           else
             TITRE="🎱 $DATE — $COUNT/10 ($GAIN)"
             MSG="$GRILLE"
