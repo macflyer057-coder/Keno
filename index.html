@@ -180,6 +180,9 @@ input:focus { border-color: #f5c842; }
   <button class="nav-item" id="nav-grilles" onclick="allerEcran('s-grilles')">
     <span class="nav-icon">📋</span>Mes grilles
   </button>
+  <button class="nav-item" id="nav-historique" onclick="allerEcran('s-historique')">
+    <span class="nav-icon">📊</span>Historique
+  </button>
   <button class="nav-item" id="nav-resultats" onclick="allerEcran('s-resultats')">
     <span class="nav-icon">✅</span>Résultats
   </button>
@@ -474,14 +477,76 @@ function afficherResultats() {
 }
 
 
-// HISTORIQUE SIMPLE (ne casse rien)
-function afficherHistorique() {
-  document.getElementById('hist-content').innerHTML = 
-    '<p style="color:#5a7a9a;text-align:center;padding:30px">' +
-    'Total gains et historique apparaîtront ici après vos premiers tirages.\n' +
-    'Onglet fonctionnel ! ✅' +
-    '</p>';
+// ---- HISTORIQUE GAINS FILTRE DATES ----
+var DATE_DEBUT = '01/04/2026';
+var DATE_FIN   = '30/04/2026';
+var historique = [];
+
+function chargerHistorique() {
+  try {
+    var hist = localStorage.getItem('keno_historique') || '[]';
+    historique = JSON.parse(hist);
+  } catch(e) { historique = []; }
 }
+
+function enregistrerHistorique() {
+  localStorage.setItem('keno_historique', JSON.stringify(historique));
+}
+
+function estDansPeriode(dateStr) {
+  var d = new Date(dateStr.split('/').reverse().join('-'));
+  var debut = new Date(DATE_DEBUT.split('/').reverse().join('-'));
+  var fin   = new Date(DATE_FIN.split('/').reverse().join('-'));
+  return d >= debut && d <= fin;
+}
+
+function ajouterGain(date, nums, count) {
+  var gain = {{10:200000,9:2000,8:200,7:15,6:5,5:2,0:2}}[count] || 0;
+  if (!historique.find(h => h.date === date) && estDansPeriode(date)) {
+    historique.unshift({{date, nums, count, gain}});
+    enregistrerHistorique();
+  }
+}
+
+function afficherHistorique() {
+  chargerHistorique();
+  var total = historique
+    .filter(h => estDansPeriode(h.date))
+    .reduce((sum, h) => sum + h.gain, 0);
+
+  var html = '<div style="padding:15px">';
+  html += '<div style="display:flex;gap:12px;margin-bottom:15px">';
+  html += '<input id="date-debut" value="' + DATE_DEBUT + '" onchange="updateDates()" style="flex:1;padding:10px;border:1px solid #2a3f5a;border-radius:6px;background:#0d1b2a;color:#e0e0e0">';
+  html += '<input id="date-fin" value="' + DATE_FIN + '" onchange="updateDates()" style="flex:1;padding:10px;border:1px solid #2a3f5a;border-radius:6px;background:#0d1b2a;color:#e0e0e0">';
+  html += '</div>';
+  html += '<div style="background:#162133;padding:15px;border-radius:8px;margin-bottom:15px">';
+  html += '<strong>Total : <span style="color:#2ecc71;font-size:20px">' + total.toLocaleString() + ' €</span></strong>';
+  html += '</div>';
+  var filtre = historique.filter(h => estDansPeriode(h.date)).slice(0,50);
+  if (filtre.length) {{
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html += '<tr style="background:#1a2a3a"><th style="padding:8px 0;text-align:left">Date</th><th style="padding:8px 0;text-align:left">N°</th><th style="padding:8px 0;text-align:right">Gain</th></tr>';
+    filtre.forEach(h => {{
+      var color = h.gain >= 5 ? '#2ecc71' : h.gain >= 2 ? '#f39c12' : '#95a5a6';
+      html += '<tr style="border-bottom:1px solid #2a3f5a">';
+      html += '<td style="padding:6px">' + h.date + '</td>';
+      html += '<td style="padding:6px">' + h.count + '</td>';
+      html += '<td style="padding:6px;text-align:right;color:' + color + '">' + h.gain.toLocaleString() + ' €</td>';
+      html += '</tr>';
+    }});
+    html += '</table>';
+  }} else {{
+    html += '<p style="color:#5a7a9a;text-align:center;padding:30px">Aucun gain dans cette période</p>';
+  }}
+  html += '</div>';
+  document.getElementById('historique-content').innerHTML = html;
+}
+
+function updateDates() {{
+  DATE_DEBUT = document.getElementById('date-debut').value;
+  DATE_FIN   = document.getElementById('date-fin').value;
+  afficherHistorique();
+}}
 
 // --- INIT ---
 charger();
