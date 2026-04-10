@@ -1,131 +1,98 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0d1b2a">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0d1b2a" />
 <title>Keno FDJ</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { font-family: Arial, sans-serif; background: #0d1b2a; color: #e0e0e0; min-height: 100vh; }
-
-/* NAV BAS */
-.nav { position: fixed; bottom: 0; left: 0; right: 0; background: #162133; border-top: 1px solid #2a3f5a; display: flex; z-index: 100; }
-.nav-item { flex: 1; padding: 10px 4px 12px; text-align: center; cursor: pointer; color: #5a7a9a; font-size: 11px; border: none; background: none; }
-.nav-item.on { color: #f5c842; }
-.nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
-
-/* CONTENU */
-.screen { display: none; padding: 12px 12px 80px; max-width: 500px; margin: 0 auto; }
-.screen.on { display: block; }
-
-/* HEADER */
-.header { background: #162133; padding: 14px 12px; text-align: center; border-bottom: 1px solid #2a3f5a; margin-bottom: 0; }
-.header h1 { color: #f5c842; font-size: 20px; }
-.header p { color: #5a7a9a; font-size: 12px; margin-top: 2px; }
-
-/* CARTE */
-.card { background: #162133; border: 1px solid #2a3f5a; border-radius: 12px; padding: 14px; margin-bottom: 12px; margin-top: 12px; }
-.card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #5a7a9a; margin-bottom: 12px; }
-
-/* GRILLE BOULES */
-.boules { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.boule {
-  aspect-ratio: 1; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: bold;
-  background: #1e2e42; color: #5a7a9a;
-  border: 1px solid #2a3f5a;
-  cursor: pointer;
-}
-.boule.sel { background: #1a4a8a; color: #7ab3ff; border-color: #2d6fc4; }
-.boule.tirage-ok { background: #1a5c2e; color: #6ee89a; border-color: #2ecc71; }
-.boule.tirage-non { border: 2px solid #f5c842; color: #f5c842; background: #1e2a10; }
-.boule.chance { border: 2px solid #9b59b6; color: #d7a8f0; background: #2a1840; }
-.boule.chance-ok { background: #6c3483; color: #f0d9ff; border-color: #9b59b6; }
-
-/* INPUT */
-input { width: 100%; background: #1e2e42; border: 1px solid #2a3f5a; border-radius: 8px; color: #e0e0e0; font-size: 15px; padding: 11px 12px; outline: none; }
-input:focus { border-color: #f5c842; }
-
-/* BOUTONS */
-.btn { display: inline-block; padding: 10px 16px; border-radius: 8px; border: 1px solid #2a3f5a; background: #1e2e42; color: #e0e0e0; font-size: 13px; cursor: pointer; margin: 4px 4px 0 0; }
-.btn.or { background: #f5c842; color: #0d1b2a; border-color: #f5c842; font-weight: bold; }
-.btn.rouge { color: #e74c3c; border-color: rgba(231,76,60,0.3); }
-
-/* RÉSULTAT */
-.resultat-box { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 12px; background: #1e2e42; margin-top: 10px; }
-.resultat-box.win { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.3); }
-.resultat-chiffre { font-size: 44px; color: #5a7a9a; line-height: 1; font-weight: bold; }
-.win .resultat-chiffre { color: #2ecc71; }
-.resultat-texte { font-size: 13px; color: #5a7a9a; }
-.win .resultat-texte { color: #7de8a8; }
-
-/* MINI BOULES GRILLES */
-.mini-boules { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
-.mb { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; background: #1e2e42; color: #5a7a9a; border: 1px solid #2a3f5a; }
-.mb.ok { background: #1a5c2e; color: #6ee89a; border-color: #2ecc71; }
-.mb.chance-ok { background: #6c3483; color: #f0d9ff; border-color: #9b59b6; }
-
-/* GRILLE ITEM */
-.grille { background: #1e2e42; border: 1px solid #2a3f5a; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
-.grille.win { border-color: rgba(46,204,113,0.4); }
-.grille-entete { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-.grille-nom { font-size: 14px; color: #e0e0e0; flex: 1; }
-.badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: #2a3f5a; color: #5a7a9a; white-space: nowrap; }
-.badge.win { background: rgba(46,204,113,0.15); color: #7de8a8; }
-
-/* LEGENDE */
-.legende { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5a7a9a; }
-.leg-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-
-
-.btn.vert { background: #1a5c2e; color: #6ee89a; border-color: #2ecc71; font-weight: bold; }
-.btn:disabled { opacity: .55; cursor: not-allowed; }
-.status-bar { padding: 9px 12px; border-radius: 8px; font-size: 12px; margin-top: 8px; }
-.status-bar.loading { background: rgba(245,200,66,.10); color: #f5c842; border: 1px solid rgba(245,200,66,.25); }
-.status-bar.success { background: rgba(46,204,113,.10); color: #7de8a8; border: 1px solid rgba(46,204,113,.25); }
-.status-bar.error   { background: rgba(231,76,60,.10);  color: #ff9c92; border: 1px solid rgba(231,76,60,.25); }
-
-/* VIDE */
-.vide { text-align: center; color: #5a7a9a; font-size: 13px; padding: 20px; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:Arial,sans-serif;background:#0d1b2a;color:#e0e0e0;min-height:100vh}
+.header{background:#162133;padding:14px 12px;text-align:center;border-bottom:1px solid #2a3f5a;margin-bottom:0}
+.header h1{color:#f5c842;font-size:20px}
+.header p{color:#5a7a9a;font-size:12px;margin-top:2px}
+.screen{display:none;padding:12px 12px 80px;max-width:500px;margin:0 auto}
+.screen.on{display:block}
+.card{background:#162133;border:1px solid #2a3f5a;border-radius:12px;padding:14px;margin-bottom:12px;margin-top:12px}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#5a7a9a;margin-bottom:12px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#162133;border-top:1px solid #2a3f5a;display:flex;z-index:100}
+.nav-item{flex:1;padding:10px 4px 12px;text-align:center;cursor:pointer;color:#5a7a9a;font-size:11px;border:none;background:none}
+.nav-item.on{color:#f5c842}
+.nav-icon{font-size:20px;display:block;margin-bottom:2px}
+input{width:100%;background:#1e2e42;border:1px solid #2a3f5a;border-radius:8px;color:#e0e0e0;font-size:15px;padding:11px 12px;outline:none}
+input:focus{border-color:#f5c842}
+.btn{display:inline-block;padding:10px 16px;border-radius:8px;border:1px solid #2a3f5a;background:#1e2e42;color:#e0e0e0;font-size:13px;cursor:pointer;margin:4px 4px 0 0}
+.btn.or{background:#f5c842;color:#0d1b2a;border-color:#f5c842;font-weight:bold}
+.btn.vert{background:#1a5c2e;color:#6ee89a;border-color:#2ecc71;font-weight:bold}
+.btn.rouge{color:#e74c3c;border-color:rgba(231,76,60,0.3)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.boules{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.boule{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;background:#1e2e42;color:#5a7a9a;border:1px solid #2a3f5a;cursor:pointer}
+.boule.sel{background:#1a4a8a;color:#7ab3ff;border-color:#2d6fc4}
+.boule.tirage-ok{background:#1a5c2e;color:#6ee89a;border-color:#2ecc71}
+.boule.tirage-non{border:2px solid #f5c842;color:#f5c842;background:#1e2a10}
+.boule.chance{border:2px solid #9b59b6;color:#d7a8f0;background:#2a1840}
+.boule.chance-ok{background:#6c3483;color:#f0d9ff;border-color:#9b59b6}
+.mini-boules{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.mb{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;background:#1e2e42;color:#5a7a9a;border:1px solid #2a3f5a}
+.mb.ok{background:#1a5c2e;color:#6ee89a;border-color:#2ecc71}
+.mb.chance-ok{background:#6c3483;color:#f0d9ff;border-color:#9b59b6}
+.grille{background:#1e2e42;border:1px solid #2a3f5a;border-radius:10px;padding:12px;margin-bottom:10px}
+.grille.win{border-color:rgba(46,204,113,0.4)}
+.grille-entete{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.grille-nom{font-size:14px;color:#e0e0e0;flex:1}
+.badge{font-size:11px;padding:3px 8px;border-radius:20px;background:#2a3f5a;color:#5a7a9a;white-space:nowrap}
+.badge.win{background:rgba(46,204,113,0.15);color:#7de8a8}
+.resultat-box{display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;background:#1e2e42;margin-top:10px}
+.resultat-box.win{background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.3)}
+.resultat-chiffre{font-size:44px;color:#5a7a9a;line-height:1;font-weight:bold}
+.resultat-box.win .resultat-chiffre{color:#2ecc71}
+.resultat-texte{font-size:13px;color:#5a7a9a}
+.resultat-box.win .resultat-texte{color:#7de8a8}
+.legende{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:#5a7a9a}
+.leg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.status-bar{padding:9px 12px;border-radius:8px;font-size:12px;margin-top:8px}
+.status-bar.loading{background:rgba(245,200,66,.10);color:#f5c842;border:1px solid rgba(245,200,66,.25)}
+.status-bar.success{background:rgba(46,204,113,.10);color:#7de8a8;border:1px solid rgba(46,204,113,.25)}
+.status-bar.error{background:rgba(231,76,60,.10);color:#ff9c92;border:1px solid rgba(231,76,60,.25)}
+.vide{text-align:center;color:#5a7a9a;font-size:13px;padding:20px}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🎱 Keno FDJ</h1>
+  <h1>Keno FDJ</h1>
   <p>Vérificateur de grilles</p>
 </div>
 
-<!-- ÉCRAN 1 : TIRAGE -->
+<!-- ÉCRAN 1 -->
 <div class="screen on" id="s-tirage">
   <div class="card">
     <div class="card-title">Tirage FDJ</div>
-    <button class="btn vert" id="btn-auto" onclick="recupererTirage(this)" style="width:100%;padding:13px;font-size:14px;margin-bottom:10px">&#127758; Récupérer le dernier tirage automatiquement</button>
+    <button class="btn vert" id="btn-auto" onclick="recupererTirage(this)" style="width:100%;padding:13px;font-size:14px;margin-bottom:10px">Récupérer le dernier tirage automatiquement</button>
     <div id="status-auto"></div>
-    <div style="font-size:11px;color:#5a7a9a;margin:10px 0 8px;text-align:center">&#8212; ou saisie manuelle &#8212;</div>
+    <div style="font-size:11px;color:#5a7a9a;margin:10px 0 8px;text-align:center">— ou saisie manuelle —</div>
     <input type="text" id="inp-tirage" placeholder="Ex : 3, 7, 12, 19, 25, 31, 38..." oninput="majTirage()">
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
       <input type="number" id="inp-chance" min="1" max="70" placeholder="N° chance" style="width:130px" oninput="majTirage()">
-      <input type="text" id="inp-date" placeholder="Date (08/04/2026)" style="flex:1">
+      <input type="text" id="inp-date" placeholder="Date 08/04/2026" style="flex:1">
     </div>
     <div id="tirage-affiche" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;min-height:10px"></div>
     <div style="font-size:12px;color:#5a7a9a;margin-top:6px" id="tirage-compte">0 / 20 numéros saisis</div>
     <div style="margin-top:10px">
       <button class="btn rouge" onclick="viderTirage()">Effacer</button>
-      <button class="btn or" onclick="allerEcran('s-resultats')">Voir les résultats →</button>
+      <button class="btn or" onclick="allerEcran('s-resultats')">Voir les résultats</button>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">Comparer avec une grille rapide — tapez vos numéros</div>
+    <div class="card-title">Comparer avec une grille rapide</div>
     <div class="boules" id="grille-rapide"></div>
     <div style="font-size:12px;color:#5a7a9a;margin-top:8px">Sélectionnés : <span id="compte-rapide" style="color:#f5c842">0</span></div>
     <div style="margin-top:10px">
       <button class="btn rouge" onclick="viderRapide()">Effacer</button>
-      <button class="btn or" onclick="comparer()">Comparer ↓</button>
+      <button class="btn or" onclick="comparer()">Comparer</button>
     </div>
   </div>
 
@@ -134,20 +101,20 @@ input:focus { border-color: #f5c842; }
       <div class="card-title">Résultat</div>
       <div class="boules" id="boules-resultat" style="margin-bottom:12px"></div>
       <div class="legende">
-        <div class="leg"><div class="leg-dot" style="border:2px solid #f5c842;background:rgba(245,200,66,0.1)"></div>Tiré</div>
+        <div class="leg"><div class="leg-dot" style="border:2px solid #f5c842;background:rgba(245,200,66,0.1)"></div>Tirage</div>
         <div class="leg"><div class="leg-dot" style="background:#1a5c2e;border:1px solid #2ecc71"></div>Match</div>
         <div class="leg"><div class="leg-dot" style="border:2px solid #9b59b6;background:rgba(155,89,182,0.2)"></div>N° chance</div>
       </div>
       <div class="resultat-box" id="resultat-box">
         <div class="resultat-chiffre" id="resultat-chiffre">0</div>
-        <div class="resultat-texte" id="resultat-texte">correspondance(s)</div>
+        <div class="resultat-texte" id="resultat-texte">correspondances</div>
       </div>
-      <div id="chance-msg" style="display:none;font-size:13px;color:#d7a8f0;margin-top:8px">⭐ Numéro chance trouvé !</div>
+      <div id="chance-msg" style="display:none;font-size:13px;color:#d7a8f0;margin-top:8px">Numéro chance trouvé !</div>
     </div>
   </div>
 </div>
 
-<!-- ÉCRAN 2 : MES GRILLES -->
+<!-- ÉCRAN 2 -->
 <div class="screen" id="s-grilles">
   <div class="card">
     <div class="card-title">Nouvelle grille</div>
@@ -162,7 +129,7 @@ input:focus { border-color: #f5c842; }
   <div id="liste-grilles"></div>
 </div>
 
-<!-- ÉCRAN 3 : RÉSULTATS -->
+<!-- ÉCRAN 3 -->
 <div class="screen" id="s-resultats">
   <div class="card" style="text-align:center">
     <div class="card-title">Tirage saisi</div>
@@ -172,230 +139,193 @@ input:focus { border-color: #f5c842; }
   <div id="res-grilles"></div>
 </div>
 
-<!-- NAV -->
+<!-- ÉCRAN 4 -->
+<div class="screen" id="s-historique">
+  <div class="card">
+    <div class="card-title">Historique</div>
+    <div id="historique-list" class="vide">Historique vide pour le moment.</div>
+  </div>
+</div>
+
 <div class="nav">
-  <button class="nav-item on" id="nav-tirage" onclick="allerEcran('s-tirage')">
-    <span class="nav-icon">🎱</span>Tirage
-  </button>
-  <button class="nav-item" id="nav-grilles" onclick="allerEcran('s-grilles')">
-    <span class="nav-icon">📋</span>Mes grilles
-  </button>
-  <button class="nav-item" id="nav-historique" onclick="allerEcran('s-historique')">
-    <span class="nav-icon">📊</span>Historique
-  </button>
-  <button class="nav-item" id="nav-resultats" onclick="allerEcran('s-resultats')">
-    <span class="nav-icon">✅</span>Résultats
-  </button>
+  <button class="nav-item on" id="nav-tirage" onclick="allerEcran('s-tirage')"><span class="nav-icon">🎯</span>Tirage</button>
+  <button class="nav-item" id="nav-grilles" onclick="allerEcran('s-grilles')"><span class="nav-icon">🧩</span>Mes grilles</button>
+  <button class="nav-item" id="nav-resultats" onclick="allerEcran('s-resultats')"><span class="nav-icon">📊</span>Résultats</button>
+  <button class="nav-item" id="nav-historique" onclick="allerEcran('s-historique')"><span class="nav-icon">🕘</span>Historique</button>
 </div>
 
 <script>
+let selNums = [];
+let tirageNums = [];
+let bonusNum = null;
+let grilles = [];
+let historique = [];
 
 function setStatus(type, msg) {
-  var el = document.getElementById('status-auto');
-  el.innerHTML = msg ? '<div class="status-bar ' + type + '">' + msg + '</div>' : '';
+  const el = document.getElementById('status-auto');
+  el.innerHTML = msg ? `<div class="status-bar ${type}">${msg}</div>` : '';
 }
 
-function recupererTirage(btn) {
-  btn.disabled = true;
-  setStatus('loading', '&#9203; Connexion a FDJ en cours...');
-  var url = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://www.fdj.fr/jeux-de-tirage/keno/resultats');
-  fetch(url)
-    .then(function(resp) {
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      return resp.text();
-    })
-    .then(function(txt) {
-      // Chercher \"numbers\":[\"14\",\"16\",...] dans le texte
-      var m = txt.match(/\\"numbers\\":\[(\\"[\d\\",]+)\]/);
-      if (!m) throw new Error('Numeros introuvables dans la page FDJ.');
-
-      var nums = m[1].match(/\d{1,2}/g)
-        .map(Number)
-        .filter(function(n){ return n >= 1 && n <= 70; })
-        .filter(function(n, i, a){ return a.indexOf(n) === i; });
-
-      if (nums.length < 10) throw new Error('Tirage incomplet : ' + nums.length + ' numeros.');
-
-      // Date
-      var idx = txt.indexOf('\\"numbers\\":[');
-      var ctx = txt.substring(Math.max(0, idx - 400), idx);
-      var dm  = ctx.match(/(\d{4}-\d{2}-\d{2})/);
-      var date = dm ? dm[1].split('-').reverse().join('/') : new Date().toLocaleDateString('fr-FR');
-
-      document.getElementById('inp-tirage').value = nums.join(', ');
-      document.getElementById('inp-date').value   = date;
-      document.getElementById('inp-chance').value = '';
-      majTirage();
-      afficherGrilles();
-
-      btn.disabled = false;
-      setStatus('success', '&#10003; ' + nums.length + ' numeros charges - tirage du ' + date);
-    })
-    .catch(function(e) {
-      btn.disabled = false;
-      setStatus('error', '&#10060; ' + e.message);
-    });
-}
-
-// --- ÉTAT ---
-var selNums = [];
-var tirageNums = [];
-var bonusNum = null;
-var grilles = [];
-
-// --- STOCKAGE ---
-function charger() {
-  try {
-    var g = localStorage.getItem('keno_grilles');
-    if (g) grilles = JSON.parse(g);
-  } catch(e) { grilles = []; }
-}
-function enregistrer() {
-  try { localStorage.setItem('keno_grilles', JSON.stringify(grilles)); } catch(e) {}
-}
-
-// --- NAVIGATION ---
-var ecrans = ['s-tirage','s-grilles','s-resultats'];
-var navs   = ['nav-tirage','nav-grilles','nav-resultats'];
 function allerEcran(id) {
-  ecrans.forEach(function(e){ document.getElementById(e).className = 'screen' + (e===id?' on':''); });
-  navs.forEach(function(n,i){ document.getElementById(n).className = 'nav-item' + (ecrans[i]===id?' on':''); });
-  if (id==='s-resultats') afficherResultats();
-  if (id==='s-grilles') majGrillesSave();
+  document.querySelectorAll('.screen').forEach(e => e.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('on'));
+  const map = {
+    's-tirage': 'nav-tirage',
+    's-grilles': 'nav-grilles',
+    's-resultats': 'nav-resultats',
+    's-historique': 'nav-historique'
+  };
+  const nav = document.getElementById(map[id]);
+  if (nav) nav.classList.add('on');
+  if (id === 's-resultats') afficherResultats();
+  if (id === 's-grilles') afficherGrilles();
+  if (id === 's-historique') afficherHistorique();
 }
 
-// --- CONSTRUCTION GRILLES ---
+function majTirage() {
+  const raw = document.getElementById('inp-tirage').value;
+  tirageNums = raw.split(/[^0-9]+/).map(Number).filter(n => n >= 1 && n <= 70);
+  const br = document.getElementById('inp-chance').value;
+  bonusNum = br ? parseInt(br) : null;
+
+  const aff = document.getElementById('tirage-affiche');
+  aff.innerHTML = '';
+  [...tirageNums].sort((a,b)=>a-b).forEach(n => {
+    const b = document.createElement('div');
+    b.className = 'boule tirage-non';
+    if (bonusNum && n === bonusNum) b.className = 'boule chance';
+    b.style.width = '32px';
+    b.style.height = '32px';
+    b.style.fontSize = '11px';
+    b.textContent = n;
+    aff.appendChild(b);
+  });
+
+  if (bonusNum && !tirageNums.includes(bonusNum)) {
+    const b = document.createElement('div');
+    b.className = 'boule chance';
+    b.style.width = '32px';
+    b.style.height = '32px';
+    b.style.fontSize = '11px';
+    b.textContent = bonusNum;
+    aff.appendChild(b);
+  }
+
+  const c = document.getElementById('tirage-compte');
+  c.textContent = `${tirageNums.length} / 20 numéros saisis`;
+}
+
+function viderTirage() {
+  document.getElementById('inp-tirage').value = '';
+  document.getElementById('inp-chance').value = '';
+  document.getElementById('inp-date').value = '';
+  tirageNums = [];
+  bonusNum = null;
+  document.getElementById('tirage-affiche').innerHTML = '';
+  document.getElementById('tirage-compte').textContent = '0 / 20 numéros saisis';
+  document.getElementById('zone-resultat').style.display = 'none';
+  document.getElementById('status-auto').innerHTML = '';
+}
+
+function toggleNum(n) {
+  const idx = selNums.indexOf(n);
+  if (idx === -1) selNums.push(n);
+  else selNums.splice(idx, 1);
+  majToutesGrilles();
+  if (document.getElementById('zone-resultat').style.display !== 'none') comparer();
+}
+
 function construireGrille(id, onclick) {
-  var el = document.getElementById(id);
+  const el = document.getElementById(id);
   el.innerHTML = '';
-  for (var i=1; i<=70; i++) {
-    var b = document.createElement('div');
-    b.className = 'boule' + (selNums.indexOf(i)!==-1?' sel':'');
+  for (let i = 1; i <= 70; i++) {
+    const b = document.createElement('div');
+    b.className = 'boule';
     b.textContent = i;
-    b.setAttribute('data-n', i);
+    b.dataset.n = i;
     b.onclick = onclick;
     el.appendChild(b);
   }
 }
 
-function toggleNum(n) {
-  var idx = selNums.indexOf(n);
-  if (idx===-1) selNums.push(n);
-  else selNums.splice(idx,1);
-  majToutesGrilles();
-  if (document.getElementById('zone-resultat').style.display !== 'none') comparer();
-}
-
 function majToutesGrilles() {
-  ['grille-rapide','grille-save'].forEach(function(id) {
-    var el = document.getElementById(id);
+  ['grille-rapide', 'grille-save'].forEach(id => {
+    const el = document.getElementById(id);
     if (!el) return;
-    var boules = el.querySelectorAll('.boule');
-    boules.forEach(function(b) {
-      var n = parseInt(b.getAttribute('data-n'));
-      b.className = 'boule' + (selNums.indexOf(n)!==-1?' sel':'');
+    el.querySelectorAll('.boule').forEach(b => {
+      const n = parseInt(b.dataset.n);
+      b.className = 'boule' + (selNums.includes(n) ? ' sel' : '');
     });
   });
-  var c = selNums.length;
-  var e1 = document.getElementById('compte-rapide');
-  var e2 = document.getElementById('compte-save');
-  if (e1) e1.textContent = c;
-  if (e2) e2.textContent = c;
-}
-
-function majGrillesSave() { majToutesGrilles(); }
-
-// --- TIRAGE ---
-function majTirage() {
-  var raw = document.getElementById('inp-tirage').value;
-  tirageNums = raw.split(/[\s,;]+/).map(Number).filter(function(n){ return n>=1&&n<=70; });
-  var br = document.getElementById('inp-chance').value;
-  bonusNum = br ? parseInt(br) : null;
-
-  var aff = document.getElementById('tirage-affiche');
-  aff.innerHTML = '';
-  var sorted = tirageNums.slice().sort(function(a,b){return a-b;});
-  sorted.forEach(function(n) {
-    var b = document.createElement('div');
-    b.className = 'boule tirage-non' + (n===bonusNum?' chance':'');
-    b.style.width='32px'; b.style.height='32px'; b.style.fontSize='11px';
-    b.textContent = n;
-    aff.appendChild(b);
-  });
-  if (bonusNum && tirageNums.indexOf(bonusNum)===-1) {
-    var b = document.createElement('div');
-    b.className = 'boule chance';
-    b.style.width='32px'; b.style.height='32px'; b.style.fontSize='11px';
-    b.textContent = bonusNum;
-    aff.appendChild(b);
-  }
-
-  var c = document.getElementById('tirage-compte');
-  c.innerHTML = tirageNums.length + ' / 20 numéros' + (tirageNums.length===20?' <span style="color:#2ecc71">✓</span>':'');
-}
-
-function viderTirage() {
-  document.getElementById('inp-tirage').value='';
-  document.getElementById('inp-chance').value='';
-  tirageNums=[]; bonusNum=null;
-  document.getElementById('tirage-affiche').innerHTML='';
-  document.getElementById('tirage-compte').textContent='0 / 20 numéros saisis';
-  document.getElementById('zone-resultat').style.display='none';
-}
-
-// --- COMPARAISON RAPIDE ---
-function comparer() {
-  if (!tirageNums.length) { alert('Saisissez d\'abord les numéros du tirage.'); return; }
-  var tSet = {};
-  tirageNums.forEach(function(n){ tSet[n]=true; });
-  var matches = selNums.filter(function(n){ return tSet[n]; });
-  var bm = bonusNum && selNums.indexOf(bonusNum)!==-1;
-
-  var grid = document.getElementById('boules-resultat');
-  grid.innerHTML='';
-  tirageNums.slice().sort(function(a,b){return a-b;}).forEach(function(n) {
-    var isM = selNums.indexOf(n)!==-1;
-    var isB = n===bonusNum;
-    var b = document.createElement('div');
-    b.className = 'boule ' + (isB&&isM?'chance-ok':isM?'tirage-ok':isB?'chance':'tirage-non');
-    b.textContent = n;
-    grid.appendChild(b);
-  });
-  if (bonusNum && tirageNums.indexOf(bonusNum)===-1) {
-    var b = document.createElement('div');
-    b.className = 'boule ' + (selNums.indexOf(bonusNum)!==-1?'chance-ok':'chance');
-    b.textContent = bonusNum;
-    grid.appendChild(b);
-  }
-
-  var box = document.getElementById('resultat-box');
-  box.className = 'resultat-box' + (matches.length>0?' win':'');
-  document.getElementById('resultat-chiffre').textContent = matches.length;
-  document.getElementById('resultat-texte').textContent = 'correspondance(s) sur ' + selNums.length + ' numéro(s)';
-  document.getElementById('chance-msg').style.display = bm?'':'none';
-  document.getElementById('zone-resultat').style.display='';
-  document.getElementById('zone-resultat').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('compte-rapide').textContent = selNums.length;
+  document.getElementById('compte-save').textContent = selNums.length;
 }
 
 function viderRapide() {
-  selNums=[];
+  selNums = [];
   majToutesGrilles();
-  if (document.getElementById('zone-resultat').style.display!=='none') comparer();
+  document.getElementById('zone-resultat').style.display = 'none';
 }
 
-// --- SAUVEGARDE GRILLE ---
+function comparer() {
+  if (!tirageNums.length) {
+    alert('Saisissez d’abord les numéros du tirage.');
+    return;
+  }
+  const tSet = new Set(tirageNums);
+  const matches = selNums.filter(n => tSet.has(n));
+  const bm = bonusNum && selNums.includes(bonusNum);
+
+  const grid = document.getElementById('boules-resultat');
+  grid.innerHTML = '';
+  [...tirageNums].sort((a,b)=>a-b).forEach(n => {
+    const isM = selNums.includes(n);
+    const isB = n === bonusNum;
+    const b = document.createElement('div');
+    b.className = 'boule ' + (isB && isM ? 'chance-ok' : isM ? 'tirage-ok' : isB ? 'chance' : 'tirage-non');
+    b.textContent = n;
+    grid.appendChild(b);
+  });
+  if (bonusNum && !tirageNums.includes(bonusNum)) {
+    const b = document.createElement('div');
+    b.className = 'boule ' + (selNums.includes(bonusNum) ? 'chance-ok' : 'chance');
+    b.textContent = bonusNum;
+    grid.appendChild(b);
+  }
+
+  const box = document.getElementById('resultat-box');
+  box.className = 'resultat-box' + (matches.length ? ' win' : '');
+  document.getElementById('resultat-chiffre').textContent = matches.length;
+  document.getElementById('resultat-texte').textContent = `correspondance(s) sur ${selNums.length} numéros`;
+  document.getElementById('chance-msg').style.display = bm ? 'block' : 'none';
+  document.getElementById('zone-resultat').style.display = 'block';
+  document.getElementById('zone-resultat').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
 function sauvegarder() {
-  if (!selNums.length) { alert('Sélectionnez au moins un numéro.'); return; }
-  var nom = document.getElementById('inp-nom').value.trim() || ('Grille '+(grilles.length+1));
-  grilles.push({ nom:nom, nums:selNums.slice().sort(function(a,b){return a-b;}), date:new Date().toLocaleDateString('fr-FR') });
-  enregistrer();
-  document.getElementById('inp-nom').value='';
+  if (!selNums.length) {
+    alert('Sélectionnez au moins un numéro.');
+    return;
+  }
+  const nom = document.getElementById('inp-nom').value.trim() || `Grille ${grilles.length + 1}`;
+  grilles.push({
+    nom,
+    nums: [...selNums].sort((a,b)=>a-b),
+    date: new Date().toLocaleDateString('fr-FR')
+  });
+  localStorage.setItem('keno-grilles', JSON.stringify(grilles));
+  document.getElementById('inp-nom').value = '';
   afficherGrilles();
+  historique.push(`Grille sauvegardée : ${nom}`);
+  localStorage.setItem('keno-historique', JSON.stringify(historique));
 }
 
 function supprimerGrille(i) {
-  if (!confirm('Supprimer "'+grilles[i].nom+'" ?')) return;
-  grilles.splice(i,1); enregistrer(); afficherGrilles();
+  if (!confirm(`Supprimer la grille "${grilles[i].nom}" ?`)) return;
+  grilles.splice(i, 1);
+  localStorage.setItem('keno-grilles', JSON.stringify(grilles));
+  afficherGrilles();
 }
 
 function utiliserGrille(i) {
@@ -405,156 +335,164 @@ function utiliserGrille(i) {
 }
 
 function afficherGrilles() {
-  var el = document.getElementById('liste-grilles');
-  if (!grilles.length) { el.innerHTML='<div class="vide">Aucune grille sauvegardée.<br>Sélectionnez des numéros ci-dessus puis appuyez sur Sauvegarder.</div>'; return; }
-  var tSet = {};
-  tirageNums.forEach(function(n){ tSet[n]=true; });
-  var hasTirage = tirageNums.length > 0;
-  el.innerHTML='';
-  grilles.forEach(function(g,i) {
-    var matches = hasTirage ? g.nums.filter(function(n){ return tSet[n]; }) : [];
-    var bm = bonusNum && g.nums.indexOf(bonusNum)!==-1;
-    var div = document.createElement('div');
-    div.className = 'grille' + (matches.length>0?' win':'');
-    var badgeHtml = hasTirage ? '<span class="badge '+(matches.length?'win':'')+'">'+(matches.length)+' match'+(bm?' +⭐':'')+' </span>' : '';
-    div.innerHTML = '<div class="grille-entete">'
-      +'<span class="grille-nom">'+g.nom+'</span>'
-      +badgeHtml
-      +'<button class="btn" style="padding:5px 10px;font-size:12px" onclick="utiliserGrille('+i+')">Utiliser</button>'
-      +'<button class="btn rouge" style="padding:5px 10px;font-size:12px" onclick="supprimerGrille('+i+')">✕</button>'
-      +'</div>'
-      +'<div class="mini-boules">'
-      +g.nums.map(function(n){
-        var m=hasTirage&&tSet[n], isb=bonusNum&&n===bonusNum;
-        return '<div class="mb '+(isb&&m?'chance-ok':m?'ok':'')+'">' +n+'</div>';
-      }).join('')
-      +'</div>'
-      +'<div style="font-size:11px;color:#5a7a9a;margin-top:6px">'+g.date+' · '+g.nums.length+' numéros</div>';
+  const el = document.getElementById('liste-grilles');
+  if (!grilles.length) {
+    el.innerHTML = '<div class="vide">Aucune grille sauvegardée.<br>Sélectionnez des numéros puis appuyez sur Sauvegarder.</div>';
+    return;
+  }
+  const tSet = new Set(tirageNums);
+  const hasTirage = tirageNums.length > 0;
+  el.innerHTML = '';
+  grilles.forEach((g, i) => {
+    const matches = hasTirage ? g.nums.filter(n => tSet.has(n)) : [];
+    const bm = bonusNum && g.nums.includes(bonusNum);
+    const div = document.createElement('div');
+    div.className = 'grille' + (matches.length ? ' win' : '');
+    div.innerHTML = `
+      <div class="grille-entete">
+        <span class="grille-nom">${g.nom}</span>
+        ${hasTirage ? `<span class="badge ${matches.length ? 'win' : ''}">${matches.length} match${matches.length > 1 ? 's' : ''}${bm ? ' + chance' : ''}</span>` : ''}
+        <button class="btn" style="padding:5px 10px;font-size:12px" onclick="utiliserGrille(${i})">Utiliser</button>
+        <button class="btn rouge" style="padding:5px 10px;font-size:12px" onclick="supprimerGrille(${i})">Supprimer</button>
+      </div>
+      <div class="mini-boules">
+        ${g.nums.map(n => {
+          const m = hasTirage && tSet.has(n);
+          const isb = bonusNum && n === bonusNum;
+          return `<div class="mb ${isb ? 'chance-ok' : m ? 'ok' : ''}">${n}</div>`;
+        }).join('')}
+      </div>
+      <div style="font-size:11px;color:#5a7a9a;margin-top:6px">${g.date} - ${g.nums.length} numéros</div>
+    `;
     el.appendChild(div);
   });
 }
 
 function afficherResultats() {
-  var el = document.getElementById('res-grilles');
-  var ra = document.getElementById('res-tirage-affiche');
-  var rd = document.getElementById('res-date');
-
-  ra.innerHTML='';
-  tirageNums.slice().sort(function(a,b){return a-b;}).forEach(function(n){
-    var b=document.createElement('div');
-    b.className='boule tirage-non'+(n===bonusNum?' chance':'');
-    b.style.width='30px'; b.style.height='30px'; b.style.fontSize='11px';
-    b.textContent=n; ra.appendChild(b);
+  const el = document.getElementById('res-grilles');
+  const ra = document.getElementById('res-tirage-affiche');
+  const rd = document.getElementById('res-date');
+  ra.innerHTML = '';
+  [...tirageNums].sort((a,b)=>a-b).forEach(n => {
+    const b = document.createElement('div');
+    b.className = 'boule tirage-non';
+    if (bonusNum && n === bonusNum) b.className = 'boule chance';
+    b.style.width = '30px';
+    b.style.height = '30px';
+    b.style.fontSize = '11px';
+    b.textContent = n;
+    ra.appendChild(b);
   });
+  if (bonusNum && !tirageNums.includes(bonusNum)) {
+    const b = document.createElement('div');
+    b.className = 'boule chance';
+    b.style.width = '30px';
+    b.style.height = '30px';
+    b.style.fontSize = '11px';
+    b.textContent = bonusNum;
+    ra.appendChild(b);
+  }
+  rd.textContent = document.getElementById('inp-date').value ? `Tirage du ${document.getElementById('inp-date').value}` : '';
+  if (!grilles.length) {
+    el.innerHTML = '<div class="vide">Aucune grille sauvegardée.</div>';
+    return;
+  }
+  if (!tirageNums.length) {
+    el.innerHTML = '<div class="vide">Saisissez d’abord le tirage dans l’onglet Tirage.</div>';
+    return;
+  }
+  const tSet = new Set(tirageNums);
+  const sorted = grilles.map((g, i) => ({
+    g, i,
+    m: g.nums.filter(n => tSet.has(n)),
+    bm: bonusNum && g.nums.includes(bonusNum)
+  })).sort((a,b) => b.m.length - a.m.length);
 
-  var dateStr=document.getElementById('inp-date').value;
-  rd.textContent = dateStr?'Tirage du '+dateStr:(tirageNums.length?tirageNums.length+' numéros saisis':'Aucun tirage saisi');
-
-  if (!grilles.length){ el.innerHTML='<div class="vide">Aucune grille sauvegardée.</div>'; return; }
-  if (!tirageNums.length){ el.innerHTML='<div class="vide">Saisissez d\'abord le tirage dans l\'onglet Tirage.</div>'; return; }
-
-  var tSet={};
-  tirageNums.forEach(function(n){ tSet[n]=true; });
-  var sorted=grilles.map(function(g,i){ return {g:g,i:i,m:g.nums.filter(function(n){return tSet[n];}),bm:bonusNum&&g.nums.indexOf(bonusNum)!==-1}; });
-  sorted.sort(function(a,b){ return b.m.length-a.m.length; });
-
-  el.innerHTML='';
-  sorted.forEach(function(item){
-    var div=document.createElement('div');
-    div.className='grille'+(item.m.length>0?' win':'');
-    div.innerHTML='<div class="grille-entete">'
-      +'<span class="grille-nom">'+item.g.nom+'</span>'
-      +'<span class="badge '+(item.m.length?'win':'')+'">'+(item.m.length)+' correspondance(s)'+(item.bm?' ⭐':'')+' </span>'
-      +'</div>'
-      +'<div class="mini-boules">'
-      +item.g.nums.map(function(n){
-        var m=tSet[n],isb=bonusNum&&n===bonusNum;
-        return '<div class="mb '+(isb&&m?'chance-ok':m?'ok':'')+'">' +n+'</div>';
-      }).join('')
-      +'</div>';
+  el.innerHTML = '';
+  sorted.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'grille' + (item.m.length ? ' win' : '');
+    div.innerHTML = `
+      <div class="grille-entete">
+        <span class="grille-nom">${item.g.nom}</span>
+        <span class="badge ${item.m.length ? 'win' : ''}">${item.m.length} correspondance(s)${item.bm ? ' + chance' : ''}</span>
+      </div>
+      <div class="mini-boules">
+        ${item.g.nums.map(n => {
+          const m = tSet.has(n);
+          const isb = bonusNum && n === bonusNum;
+          return `<div class="mb ${isb ? 'chance-ok' : m ? 'ok' : ''}">${n}</div>`;
+        }).join('')}
+      </div>
+    `;
     el.appendChild(div);
   });
 }
 
-
-// ---- HISTORIQUE GAINS FILTRE DATES ----
-var DATE_DEBUT = '01/04/2026';
-var DATE_FIN   = '30/04/2026';
-var historique = [];
-
-function chargerHistorique() {
-  try {
-    var hist = localStorage.getItem('keno_historique') || '[]';
-    historique = JSON.parse(hist);
-  } catch(e) { historique = []; }
-}
-
-function enregistrerHistorique() {
-  localStorage.setItem('keno_historique', JSON.stringify(historique));
-}
-
-function estDansPeriode(dateStr) {
-  var d = new Date(dateStr.split('/').reverse().join('-'));
-  var debut = new Date(DATE_DEBUT.split('/').reverse().join('-'));
-  var fin   = new Date(DATE_FIN.split('/').reverse().join('-'));
-  return d >= debut && d <= fin;
-}
-
-function ajouterGain(date, nums, count) {
-  var gain = {{10:200000,9:2000,8:200,7:15,6:5,5:2,0:2}}[count] || 0;
-  if (!historique.find(h => h.date === date) && estDansPeriode(date)) {
-    historique.unshift({{date, nums, count, gain}});
-    enregistrerHistorique();
-  }
-}
-
 function afficherHistorique() {
-  chargerHistorique();
-  var total = historique
-    .filter(h => estDansPeriode(h.date))
-    .reduce((sum, h) => sum + h.gain, 0);
-
-  var html = '<div style="padding:15px">';
-  html += '<div style="display:flex;gap:12px;margin-bottom:15px">';
-  html += '<input id="date-debut" value="' + DATE_DEBUT + '" onchange="updateDates()" style="flex:1;padding:10px;border:1px solid #2a3f5a;border-radius:6px;background:#0d1b2a;color:#e0e0e0">';
-  html += '<input id="date-fin" value="' + DATE_FIN + '" onchange="updateDates()" style="flex:1;padding:10px;border:1px solid #2a3f5a;border-radius:6px;background:#0d1b2a;color:#e0e0e0">';
-  html += '</div>';
-  html += '<div style="background:#162133;padding:15px;border-radius:8px;margin-bottom:15px">';
-  html += '<strong>Total : <span style="color:#2ecc71;font-size:20px">' + total.toLocaleString() + ' €</span></strong>';
-  html += '</div>';
-  var filtre = historique.filter(h => estDansPeriode(h.date)).slice(0,50);
-  if (filtre.length) {{
-    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
-    html += '<tr style="background:#1a2a3a"><th style="padding:8px 0;text-align:left">Date</th><th style="padding:8px 0;text-align:left">N°</th><th style="padding:8px 0;text-align:right">Gain</th></tr>';
-    filtre.forEach(h => {{
-      var color = h.gain >= 5 ? '#2ecc71' : h.gain >= 2 ? '#f39c12' : '#95a5a6';
-      html += '<tr style="border-bottom:1px solid #2a3f5a">';
-      html += '<td style="padding:6px">' + h.date + '</td>';
-      html += '<td style="padding:6px">' + h.count + '</td>';
-      html += '<td style="padding:6px;text-align:right;color:' + color + '">' + h.gain.toLocaleString() + ' €</td>';
-      html += '</tr>';
-    }});
-    html += '</table>';
-  }} else {{
-    html += '<p style="color:#5a7a9a;text-align:center;padding:30px">Aucun gain dans cette période</p>';
-  }}
-  html += '</div>';
-  document.getElementById('historique-content').innerHTML = html;
+  const el = document.getElementById('historique-list');
+  if (!historique.length) {
+    el.className = 'vide';
+    el.textContent = 'Historique vide pour le moment.';
+    return;
+  }
+  el.className = '';
+  el.innerHTML = historique.map(h => `<div class="grille">${h}</div>`).join('');
 }
 
-function updateDates() {{
-  DATE_DEBUT = document.getElementById('date-debut').value;
-  DATE_FIN   = document.getElementById('date-fin').value;
-  afficherHistorique();
-}}
+function charger() {
+  try {
+    const g = localStorage.getItem('keno-grilles');
+    if (g) grilles = JSON.parse(g);
+  } catch(e) {}
+  try {
+    const h = localStorage.getItem('keno-historique');
+    if (h) historique = JSON.parse(h);
+  } catch(e) {}
+}
 
-// --- INIT ---
+function recupererTirage(btn) {
+  btn.disabled = true;
+  setStatus('loading', 'Connexion à FDJ en cours...');
+  const url = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://www.fdj.fr/jeux-de-tirage/keno/resultats');
+  fetch(url)
+    .then(resp => {
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.text();
+    })
+    .then(txt => {
+      const m = txt.match(/numbers[^]*?(\d{1,2}(?:[,\s]+\d{1,2}){9,19})/i);
+      if (!m) throw new Error('Numéros introuvables dans la page FDJ.');
+      const nums = (m[1].match(/\d{1,2}/g) || []).map(Number).filter(n => n >= 1 && n <= 70);
+      if (nums.length < 10) throw new Error('Tirage incomplet.');
+      const idx = txt.indexOf('numbers');
+      const ctx = txt.substring(Math.max(0, idx - 400), idx + 400);
+      const dm = ctx.match(/\d{4}-\d{2}-\d{2}/);
+      const date = dm ? dm[0].split('-').reverse().join('/') : new Date().toLocaleDateString('fr-FR');
+
+      document.getElementById('inp-tirage').value = nums.join(', ');
+      document.getElementById('inp-date').value = date;
+      majTirage();
+      afficherGrilles();
+      btn.disabled = false;
+      setStatus('success', `${nums.length} numéros chargés — tirage du ${date}`);
+      historique.push(`Tirage récupéré automatiquement le ${date}`);
+      localStorage.setItem('keno-historique', JSON.stringify(historique));
+    })
+    .catch(e => {
+      btn.disabled = false;
+      setStatus('error', e.message);
+    });
+}
+
+const fnClick = (e) => toggleNum(parseInt(e.currentTarget.dataset.n));
+
+construireGrille('grille-rapide', fnClick);
+construireGrille('grille-save', fnClick);
 charger();
-
-var fnClick1 = function(e){ var n=parseInt(e.currentTarget.getAttribute('data-n')); toggleNum(n); };
-construireGrille('grille-rapide', fnClick1);
-construireGrille('grille-save', fnClick1);
+majToutesGrilles();
 afficherGrilles();
+afficherHistorique();
 </script>
 </body>
 </html>
