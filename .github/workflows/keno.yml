@@ -1,18 +1,23 @@
-name: Keno Tirage 20h15
+name: Keno Tirage 21h00
 
 on:
   schedule:
-    - cron: '15 18 * * *'  # 18h15 UTC = 20h15 CEST
-  workflow_dispatch:         # déclenchement manuel possible
+    - cron: '0 19 * * *'  # 19h UTC = 21h CEST
+  workflow_dispatch:
 
 jobs:
   check-tirage:
     runs-on: ubuntu-latest
     steps:
       - name: Récupérer et notifier tirage Keno
+        env:
+          NTFY_TOPIC: ${ secrets.NTFY_TOPIC }
         run: |
-          RESULT=$(curl -s "https://api.codetabs.com/v1/proxy?quest=https://www.fdj.fr/jeux-de-tirage/keno/resultats")
+          set -e
+          echo "=== Keno FDJ 21h00 ==="
+          RESULT=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=https://www.fdj.fr/jeux-de-tirage/keno/resultats")
           NUMBERS=$(echo "$RESULT" | grep -o '\\"numbers\\":\[[^]]*\]' | grep -o '[0-9][0-9]*' | head -20 | tr '\n' ',')
+          echo "Tirage: $NUMBERS"
           GRILLE="1,7,8,10,12,26,30,39,41,53"
           COUNT=0
           MATCHED=""
@@ -23,18 +28,31 @@ jobs:
             fi
           done
           DATE=$(date '+%d/%m/%Y')
+
+          case $COUNT in
+            10) GAIN="200000€" ;;
+            9) GAIN="2000€" ;;
+            8) GAIN="200€" ;;
+            7) GAIN="15€" ;;
+            6) GAIN="5€" ;;
+            5|0) GAIN="2€" ;;
+            *) GAIN="0€" ;;
+          esac
+
           if [ $COUNT -ge 6 ]; then
-            TITRE="🎉 Keno — $COUNT numéros gagnants !"
-            MSG="Vos numéros :$MATCHED — Tirage du $DATE"
+            TITRE="🎉 Keno — $COUNT/10 ($GAIN) !"
+            MSG="Vos numéros :$MATCHED — Tirage $DATE"
             PRIORITY="urgent"
-            TAGS="tada"
+            TAGS="tada,party"
           else
-            TITRE="🎱 Keno du $DATE"
-            MSG="$COUNT/10 numéros correspondent."
-            PRIORITY="default"
+            TITRE="🎱 Keno $DATE — $COUNT/10 ($GAIN)"
+            MSG="$GRILLE"
+            PRIORITY="low"
             TAGS="dart"
           fi
-          curl -s -X POST https://ntfy.sh/${{ secrets.NTFY_TOPIC }} \
+
+          echo "[$TITRE] $MSG"
+          curl -fsS -X POST "https://ntfy.sh/$NTFY_TOPIC" \
             -H "Title: $TITRE" \
             -H "Priority: $PRIORITY" \
             -H "Tags: $TAGS" \
