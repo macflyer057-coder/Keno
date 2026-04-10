@@ -227,7 +227,7 @@ function recupererTirage(btn) {
       document.getElementById('inp-tirage').value = nums.join(', ');
       document.getElementById('inp-date').value   = date;
       document.getElementById('inp-chance').value = '';
-      majTirage();
+      majTirageAvecHistorique();
       afficherGrilles();
 
       btn.disabled = false;
@@ -312,7 +312,7 @@ function majToutesGrilles() {
 function majGrillesSave() { majToutesGrilles(); }
 
 // --- TIRAGE ---
-function majTirage() {
+function majTirageAvecHistorique() {
   var raw = document.getElementById('inp-tirage').value;
   tirageNums = raw.split(/[\s,;]+/).map(Number).filter(function(n){ return n>=1&&n<=70; });
   var br = document.getElementById('inp-chance').value;
@@ -482,8 +482,86 @@ function afficherResultats() {
   });
 }
 
+
+// ---- HISTORIQUE GAINS ----
+var DATE_DEBUT = '01/04/2026'; // ← changez ici
+var DATE_FIN   = '30/04/2026'; // ← changez ici
+
+function chargerHistorique() {
+  try {
+    var hist = localStorage.getItem('keno_historique');
+    if (hist) historique = JSON.parse(hist);
+  } catch(e) { historique = []; }
+}
+
+function enregistrerHistorique() {
+  localStorage.setItem('keno_historique', JSON.stringify(historique));
+}
+
+function ajouterGain(date, nums, count) {
+  var gain = 0;
+  switch(count) {
+    case 10: gain = 200000; break;
+    case 9:  gain = 2000; break;
+    case 8:  gain = 200; break;
+    case 7:  gain = 15; break;
+    case 6:  gain = 5; break;
+    case 5: case 0: gain = 2; break;
+  }
+  historique.unshift({date: date, nums: nums, count: count, gain: gain});
+  // Garder seulement entre DATE_DEBUT et DATE_FIN
+  historique = historique.filter(h => {
+    var d = new Date(h.date.split('/').reverse().join('-'));
+    var debut = new Date(DATE_DEBUT.split('/').reverse().join('-'));
+    var fin   = new Date(DATE_FIN.split('/').reverse().join('-'));
+    return d >= debut && d <= fin;
+  });
+  enregistrerHistorique();
+}
+
+function afficherHistorique() {
+  chargerHistorique();
+  var total = historique.reduce((sum, h) => sum + h.gain, 0);
+  var html = '<div style="padding:15px">';
+  html += '<h3 style="color:#2ecc71">📊 Historique gains</h3>';
+  html += '<div style="background:#162133;padding:12px;border-radius:8px;margin:10px 0">';
+  html += '<strong>Total gains : <span style="color:#2ecc71;font-size:18px">' + (total/1).toLocaleString() + ' €</span></strong>';
+  html += '</div>';
+  if (historique.length) {
+    html += '<table style="width:100%;font-size:11px">';
+    html += '<tr><th>Date</th><th>Numéros</th><th>N°</th><th>Gain</th></tr>';
+    historique.slice(0,20).forEach(h => {
+      var gainColor = h.gain >= 5 ? '#2ecc71' : '#95a5a6';
+      html += '<tr style="border-bottom:1px solid #2a3f5a">';
+      html += '<td style="padding:6px 0">' + h.date + '</td>';
+      html += '<td style="padding:6px 0">' + h.nums.join(',') + '</td>';
+      html += '<td style="padding:6px 0">' + h.count + '</td>';
+      html += '<td style="padding:6px 0;color:' + gainColor + '">' + (h.gain/1).toLocaleString() + ' €</td>';
+      html += '</tr>';
+    });
+    html += '</table>';
+  } else {
+    html += '<p style="color:#5a7a9a">Aucun gain enregistré</p>';
+  }
+  html += '</div>';
+  document.getElementById('s-historique').innerHTML = html;
+}
+
+function majTirageAvecHistorique() {
+  majTirage();
+  afficherGrilles();
+  // Ajouter au historique si gain
+  var tirage = document.getElementById('inp-tirage').value.split(',').map(Number);
+  var date = document.getElementById('inp-date').value;
+  if (tirage.length >= 10 && date) {
+    var maGrille = grilles[0] ? grilles[0].nums : [];
+    var count = maGrille.filter(n => tirage.includes(n)).length;
+    if (count >= 0) ajouterGain(date, tirage, count);
+  }
+}
+
 // --- INIT ---
-charger();
+charger(); chargerHistorique();
 
 var fnClick1 = function(e){ var n=parseInt(e.currentTarget.getAttribute('data-n')); toggleNum(n); };
 construireGrille('grille-rapide', fnClick1);
