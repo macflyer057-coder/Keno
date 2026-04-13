@@ -46,15 +46,16 @@ jobs:
 
           DATE=$(date '+%d/%m/%Y')
 
-          case $COUNT in
-            10) GAIN="200000€" ;;
-            9)  GAIN="2000€" ;;
-            8)  GAIN="200€" ;;
-            7)  GAIN="15€" ;;
-            6)  GAIN="5€" ;;
-            5|0) GAIN="2€" ;;
-            *) GAIN="0€" ;;
-          esac
+case $COUNT in
+  10) GAIN_VAL=200000 ; GAIN_LIB="200000€" ;;
+  9)  GAIN_VAL=2000   ; GAIN_LIB="2000€" ;;
+  8)  GAIN_VAL=150    ; GAIN_LIB="150€" ;;
+  7)  GAIN_VAL=15     ; GAIN_LIB="15€" ;;
+  6)  GAIN_VAL=5      ; GAIN_LIB="5€" ;;
+  5)  GAIN_VAL=2      ; GAIN_LIB="2€" ;;
+  0)  GAIN_VAL=2      ; GAIN_LIB="2€" ;;
+  *)  GAIN_VAL=0      ; GAIN_LIB="0€" ;;
+esac
 
           if [ $COUNT -ge 6 ]; then
             TITRE="🎉 $COUNT/10 ($GAIN) !"
