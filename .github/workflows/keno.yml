@@ -2,7 +2,7 @@ name: Keno Tirage 21h00
 
 on:
   schedule:
-    - cron: '0 19 * * *'  # 21h00 CEST
+    - cron: '45 18 * * *'  # 20h45 CEST → arrive ~21h00 réel
   workflow_dispatch:
 
 jobs:
@@ -13,18 +13,39 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
+          # Récupération via proxy
           RESULT=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=https://www.fdj.fr/jeux-de-tirage/keno/resultats")
-          NUMBERS=$(echo "$RESULT" | grep -o '\\"numbers\\":\[[^]]*\]' | grep -o '[0-9][0-9]*' | head -20 | tr '\n' ',')
+
+          # Extraction robuste : cherche tous les nombres 1-70 dans un bloc numbers
+          NUMBERS=$(echo "$RESULT" \
+            | grep -oE '"numbers"[^]]+]' \
+            | grep -oE '\b([1-9]|[1-6][0-9]|70)\b' \
+            | head -20 \
+            | tr '\n' ',')
+
+          # Si vide, tentative fallback sur kenometric
+          if [ -z "$NUMBERS" ]; then
+            RESULT2=$(curl -fsS "https://kenometric.fr/tirage/$(date '+%Y-%m-%d')/")
+            NUMBERS=$(echo "$RESULT2" \
+              | grep -oE 'ball[^>]*>([0-9]+)<' \
+              | grep -oE '[0-9]+' \
+              | head -20 \
+              | tr '\n' ',')
+          fi
+
           GRILLE="1,7,8,10,12,26,30,39,41,53"
           COUNT=0
           MATCHED=""
+
           for N in $(echo $GRILLE | tr ',' ' '); do
             if echo ",$NUMBERS," | grep -q ",$N,"; then
               COUNT=$((COUNT+1))
               MATCHED="$MATCHED $N"
             fi
           done
+
           DATE=$(date '+%d/%m/%Y')
+
           case $COUNT in
             10) GAIN="200000€" ;;
             9)  GAIN="2000€" ;;
@@ -34,6 +55,7 @@ jobs:
             5|0) GAIN="2€" ;;
             *) GAIN="0€" ;;
           esac
+
           if [ $COUNT -ge 6 ]; then
             TITRE="🎉 $COUNT/10 ($GAIN) !"
             MSG="Numéros :$MATCHED — $DATE"
@@ -41,11 +63,15 @@ jobs:
             TAGS="tada"
           else
             TITRE="🎱 $DATE — $COUNT/10 ($GAIN)"
-            MSG="$GRILLE"
+            MSG="Tirage récupéré : $NUMBERS"
             PRIORITY="default"
             TAGS="dart"
           fi
+
           echo "[$TITRE] $MSG"
+          echo "NUMBERS=$NUMBERS"
+          echo "COUNT=$COUNT"
+
           curl -fsS -X POST "https://ntfy.sh/$NTFY_TOPIC" \
             -H "Title: $TITRE" \
             -H "Priority: $PRIORITY" \
