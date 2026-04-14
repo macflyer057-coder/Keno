@@ -1,17 +1,11 @@
 {
-  "total": 4,
+  "total": 2,
   "historique": [
     {
       "date": "13/04/2026",
       "count": 0,
       "gain": "2€",
       "numeros": ""
-    },
-    {
-      "date": "04/04/2026",
-      "count": 4,
-      "gain": "2€",
-      "numeros": "1 12 26 30"
     }
   ]
 }
