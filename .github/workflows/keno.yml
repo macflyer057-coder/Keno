@@ -2,7 +2,7 @@ name: Keno Tirage 21h00
 
 on:
   schedule:
-    - cron: '0 19 * * *'   # UTC 19h00 = Paris 21h00 (CEST)
+    - cron: '0 19 * * *'   # 21h00 Paris en heure d'été (CEST = UTC+2)
   workflow_dispatch:
 
 jobs:
@@ -10,41 +10,39 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-          - name: Keno FDJ 21h00
+      - name: Keno FDJ 21h00
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
-          # Récupération page FDJ
           FDJ_URL="https://www.fdj.fr/jeux-de-tirage/keno/resultats"
           ENCODED_URL=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$FDJ_URL'))")
           PAGE=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=${ENCODED_URL}")
 
-          # Extraction numéros
           NUMBERS_RAW=$(echo "$PAGE" | python3 -c "
-import sys, json, re
-txt = sys.stdin.read()
-matches = re.findall(r'\"numbers\"\s*:\s*\[([^\]]+)\]', txt)
-if matches:
-    nums = re.findall(r'\d+', matches[0])
-    nums = [n for n in nums if 1 <= int(n) <= 70]
-    print(','.join(nums[:20]))
-")
+          import sys, re
+          txt = sys.stdin.read()
+          matches = re.findall(r'\"numbers\"\s*:\s*\[([^\]]+)\]', txt)
+          if matches:
+              nums = re.findall(r'\d+', matches[0])
+              nums = [n for n in nums if 1 <= int(n) <= 70]
+              print(','.join(nums[:20]))
+          ")
 
-          # Fallback kenometric
-          if [ -z \"\$NUMBERS_RAW\" ] || [ \$(echo \"\$NUMBERS_RAW\" | tr ',' '\n' | wc -l) -lt 10 ]; then
+          if [ -z "$NUMBERS_RAW" ] || [ "$(echo "$NUMBERS_RAW" | tr ',' '\n' | wc -l)" -lt 10 ]; then
             TODAY=$(date '+%Y-%m-%d')
             PAGE2=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=https%3A%2F%2Fkenometric.fr%2Ftirage%2F${TODAY}%2F")
             NUMBERS_RAW=$(echo "$PAGE2" | python3 -c "
-import sys, re
-txt = sys.stdin.read()
-nums = re.findall(r'class=\"ball[^\"]*\">(\d+)<', txt)
-nums = [n for n in nums if 1 <= int(n) <= 70][:20]
-print(','.join(nums))
-")
+            import sys, re
+            txt = sys.stdin.read()
+            nums = re.findall(r'class=\"ball[^\"]*\">(\d+)<', txt)
+            nums = [n for n in nums if 1 <= int(n) <= 70][:20]
+            print(','.join(nums))
+            ")
           fi
 
           COUNT_NUMS=$(echo "$NUMBERS_RAW" | tr ',' '\n' | grep -c '.')
@@ -90,20 +88,20 @@ print(','.join(nums))
           NEW_TOTAL=$((TOTAL + GAIN_VAL))
 
           python3 - <<EOF
-import json
-with open('gains.json','r') as f:
-    d = json.load(f)
-d['total'] = $NEW_TOTAL
-d['historique'].insert(0, {
-    "date": "$DATE",
-    "count": $COUNT,
-    "gain": "$GAIN_LIB",
-    "numeros": "$MATCHED".strip()
-})
-d['historique'] = d['historique'][:30]
-with open('gains.json','w') as f:
-    json.dump(d, f, ensure_ascii=False, indent=2)
-EOF
+          import json
+          with open('gains.json','r') as f:
+              d = json.load(f)
+          d['total'] = $NEW_TOTAL
+          d['historique'].insert(0, {
+              "date": "$DATE",
+              "count": $COUNT,
+              "gain": "$GAIN_LIB",
+              "numeros": "$MATCHED".strip()
+          })
+          d['historique'] = d['historique'][:30]
+          with open('gains.json','w') as f:
+              json.dump(d, f, ensure_ascii=False, indent=2)
+          EOF
 
           git config user.name "Keno Bot"
           git config user.email "bot@keno"
