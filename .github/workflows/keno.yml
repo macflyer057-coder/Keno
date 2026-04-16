@@ -14,47 +14,41 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Keno FDJ 21h00
+          - name: Keno FDJ 21h00
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
-          # ── Récupération page FDJ via proxy ──────────────────────────
-          PAGE=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=$(python3 -c 'import urllib.parse; print(urllib.parse.quote("https://www.fdj.fr/jeux-de-tirage/keno/resultats"))')")
+          # Récupération page FDJ
+          FDJ_URL="https://www.fdj.fr/jeux-de-tirage/keno/resultats"
+          ENCODED_URL=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$FDJ_URL'))")
+          PAGE=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=${ENCODED_URL}")
 
-          # ── Extraction du bloc JSON __NEXT_DATA__ ─────────────────────
-          NEXT_DATA=$(echo "$PAGE" | grep -oP '(?<=<script id="__NEXT_DATA__" type="application/json">).*?(?=</script>)')
+          # Extraction numéros
+          NUMBERS_RAW=$(echo "$PAGE" | python3 -c "
+import sys, json, re
+txt = sys.stdin.read()
+matches = re.findall(r'\"numbers\"\s*:\s*\[([^\]]+)\]', txt)
+if matches:
+    nums = re.findall(r'\d+', matches[0])
+    nums = [n for n in nums if 1 <= int(n) <= 70]
+    print(','.join(nums[:20]))
+")
 
-          # ── Extraction du tableau "numbers" du DERNIER tirage ─────────
-          # On isole le premier tableau "numbers" trouvé dans le JSON
-          NUMBERS_RAW=$(echo "$NEXT_DATA" | python3 -c "
-          import sys, json, re
-          txt = sys.stdin.read()
-          # Chercher tous les tableaux numbers dans le JSON
-          matches = re.findall(r'\"numbers\"\s*:\s*\[([^\]]+)\]', txt)
-          if matches:
-              # Premier match = tirage le plus récent
-              nums = re.findall(r'\d+', matches[0])
-              nums = [n for n in nums if 1 <= int(n) <= 70]
-              print(','.join(nums[:20]))
-          ")
-
-          # ── Fallback : kenometric.fr ──────────────────────────────────
-          if [ -z "$NUMBERS_RAW" ] || [ $(echo "$NUMBERS_RAW" | tr ',' '\n' | wc -l) -lt 10 ]; then
-            echo "Fallback kenometric..."
-            PAGE2=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=$(python3 -c 'import urllib.parse,datetime; d=datetime.date.today().strftime("%Y-%m-%d"); print(urllib.parse.quote(f"https://kenometric.fr/tirage/{d}/"))')")
+          # Fallback kenometric
+          if [ -z \"\$NUMBERS_RAW\" ] || [ \$(echo \"\$NUMBERS_RAW\" | tr ',' '\n' | wc -l) -lt 10 ]; then
+            TODAY=$(date '+%Y-%m-%d')
+            PAGE2=$(curl -fsS "https://api.codetabs.com/v1/proxy?quest=https%3A%2F%2Fkenometric.fr%2Ftirage%2F${TODAY}%2F")
             NUMBERS_RAW=$(echo "$PAGE2" | python3 -c "
-          import sys, re
-          txt = sys.stdin.read()
-          nums = re.findall(r'class=\"ball[^\"]*\">(\d+)<', txt)
-          nums = [n for n in nums if 1 <= int(n) <= 70][:20]
-          print(','.join(nums))
-          ")
+import sys, re
+txt = sys.stdin.read()
+nums = re.findall(r'class=\"ball[^\"]*\">(\d+)<', txt)
+nums = [n for n in nums if 1 <= int(n) <= 70][:20]
+print(','.join(nums))
+")
           fi
 
-          # ── Vérification ─────────────────────────────────────────────
           COUNT_NUMS=$(echo "$NUMBERS_RAW" | tr ',' '\n' | grep -c '.')
           if [ "$COUNT_NUMS" -lt 10 ]; then
-            echo "Échec récupération tirage ($COUNT_NUMS numéros). Abandon."
             curl -fsS -X POST "https://ntfy.sh/$NTFY_TOPIC" \
               -H "Title: ❌ Keno — tirage introuvable" \
               -H "Priority: default" \
@@ -63,9 +57,6 @@ jobs:
             exit 0
           fi
 
-          echo "Numéros tirés : $NUMBERS_RAW"
-
-          # ── Comparaison avec la grille ────────────────────────────────
           GRILLE="1,7,8,10,12,26,30,39,41,53"
           COUNT=0
           MATCHED=""
@@ -78,7 +69,6 @@ jobs:
 
           DATE=$(date '+%d/%m/%Y')
 
-          # ── Calcul du gain ────────────────────────────────────────────
           case $COUNT in
             10) GAIN_VAL=200000 ; GAIN_LIB="200000€" ;;
             9)  GAIN_VAL=2000   ; GAIN_LIB="2000€" ;;
@@ -90,7 +80,6 @@ jobs:
             *)  GAIN_VAL=0      ; GAIN_LIB="0€" ;;
           esac
 
-          # ── Mise à jour gains.json ────────────────────────────────────
           if [ -f gains.json ]; then
             TOTAL=$(python3 -c "import json; d=json.load(open('gains.json')); print(d.get('total',0))")
           else
@@ -101,37 +90,35 @@ jobs:
           NEW_TOTAL=$((TOTAL + GAIN_VAL))
 
           python3 - <<EOF
-          import json
-          with open('gains.json','r') as f:
-              d = json.load(f)
-          d['total'] = $NEW_TOTAL
-          d['historique'].insert(0, {
-              "date": "$DATE",
-              "count": $COUNT,
-              "gain": "$GAIN_LIB",
-              "numeros": "$MATCHED".strip()
-          })
-          d['historique'] = d['historique'][:30]
-          with open('gains.json','w') as f:
-              json.dump(d, f, ensure_ascii=False, indent=2)
-          EOF
+import json
+with open('gains.json','r') as f:
+    d = json.load(f)
+d['total'] = $NEW_TOTAL
+d['historique'].insert(0, {
+    "date": "$DATE",
+    "count": $COUNT,
+    "gain": "$GAIN_LIB",
+    "numeros": "$MATCHED".strip()
+})
+d['historique'] = d['historique'][:30]
+with open('gains.json','w') as f:
+    json.dump(d, f, ensure_ascii=False, indent=2)
+EOF
 
-          # ── Commit ────────────────────────────────────────────────────
           git config user.name "Keno Bot"
           git config user.email "bot@keno"
           git add gains.json
           git commit -m "Keno $DATE : $COUNT/10 ($GAIN_LIB) — total ${NEW_TOTAL}€" || echo "Rien à committer"
           git push
 
-          # ── Notification ──────────────────────────────────────────────
           if [ $COUNT -ge 6 ]; then
             TITRE="🎉 $COUNT/10 ($GAIN_LIB) !"
-            MSG="Numéros :$MATCHED — Total cumulé : ${NEW_TOTAL}€"
+            MSG="Numéros :$MATCHED — Total : ${NEW_TOTAL}€"
             PRIORITY="urgent"
             TAGS="tada"
           else
             TITRE="🎱 $DATE — $COUNT/10 ($GAIN_LIB)"
-            MSG="Tirage : $NUMBERS_RAW | Total cumulé : ${NEW_TOTAL}€"
+            MSG="Tirage : $NUMBERS_RAW | Total : ${NEW_TOTAL}€"
             PRIORITY="default"
             TAGS="dart"
           fi
