@@ -20,7 +20,10 @@ body { font-family: Arial, sans-serif; background: #0d1b2a; color: #e0e0e0; min-
 .card { background: #162133; border: 1px solid #2a3f5a; border-radius: 12px; padding: 14px; margin-bottom: 12px; margin-top: 12px; }
 .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #5a7a9a; margin-bottom: 12px; }
 .boules { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.boule { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; background: #1e2e42; color: #5a7a9a; border: 1px solid #2a3f5a; cursor: pointer; }
+.boule {
+  aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: bold; background: #1e2e42; color: #5a7a9a; border: 1px solid #2a3f5a; cursor: pointer;
+}
 .boule.sel { background: #1a4a8a; color: #7ab3ff; border-color: #2d6fc4; }
 .boule.tirage-ok { background: #1a5c2e; color: #6ee89a; border-color: #2ecc71; }
 .boule.tirage-non { border: 2px solid #f5c842; color: #f5c842; background: #1e2a10; }
@@ -55,7 +58,7 @@ input:focus { border-color: #f5c842; }
 .status-bar { padding: 9px 12px; border-radius: 8px; font-size: 12px; margin-top: 8px; }
 .status-bar.loading { background: rgba(245,200,66,.10); color: #f5c842; border: 1px solid rgba(245,200,66,.25); }
 .status-bar.success { background: rgba(46,204,113,.10); color: #7de8a8; border: 1px solid rgba(46,204,113,.25); }
-.status-bar.error   { background: rgba(231,76,60,.10);  color: #ff9c92; border: 1px solid rgba(231,76,60,.25); }
+.status-bar.error { background: rgba(231,76,60,.10); color: #ff9c92; border: 1px solid rgba(231,76,60,.25); }
 .vide { text-align: center; color: #5a7a9a; font-size: 13px; padding: 20px; }
 </style>
 </head>
@@ -66,7 +69,6 @@ input:focus { border-color: #f5c842; }
   <p>Vérificateur de grilles</p>
 </div>
 
-<!-- ÉCRAN 1 : TIRAGE -->
 <div class="screen on" id="s-tirage">
   <div class="card">
     <div class="card-title">Tirage FDJ</div>
@@ -114,7 +116,6 @@ input:focus { border-color: #f5c842; }
   </div>
 </div>
 
-<!-- ÉCRAN 2 : MES GRILLES -->
 <div class="screen" id="s-grilles">
   <div class="card">
     <div class="card-title">Nouvelle grille</div>
@@ -129,7 +130,6 @@ input:focus { border-color: #f5c842; }
   <div id="liste-grilles"></div>
 </div>
 
-<!-- ÉCRAN 3 : RÉSULTATS -->
 <div class="screen" id="s-resultats">
   <div class="card" style="text-align:center">
     <div class="card-title">Tirage saisi</div>
@@ -139,20 +139,34 @@ input:focus { border-color: #f5c842; }
   <div id="res-grilles"></div>
 </div>
 
-<!-- ÉCRAN 4 : CAGNOTTE -->
 <div class="screen" id="s-cagnotte">
   <div class="card" style="text-align:center">
     <div class="card-title">💰 Cagnotte totale</div>
-    <div id="cagnotte-total" style="font-size:52px;font-weight:bold;color:#f5c842;margin:16px 0">--</div>
-    <div id="cagnotte-jours" style="font-size:12px;color:#5a7a9a"></div>
+    <div id="cagnotte-total" style="font-size:52px;font-weight:bold;color:#f5c842;margin:16px 0">0€</div>
+    <div id="cagnotte-jours" style="font-size:12px;color:#5a7a9a">0 entrée enregistrée</div>
   </div>
+
   <div class="card">
-    <div class="card-title">📅 Historique (30 derniers jours)</div>
-    <div id="cagnotte-liste" class="vide">Chargement...</div>
+    <div class="card-title">Ajouter un gain</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <button class="btn or" onclick="ajouterGain(2)">+2€</button>
+      <button class="btn or" onclick="ajouterGain(5)">+5€</button>
+      <button class="btn or" onclick="ajouterGain(10)">+10€</button>
+      <button class="btn or" onclick="ajouterGain(100)">+100€</button>
+      <button class="btn or" onclick="ajouterGain(2000)">+2000€</button>
+      <button class="btn or" onclick="ajouterGain(200000)">+200000€</button>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn rouge" onclick="resetCagnotte()">Reset cagnotte</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Historique local</div>
+    <div id="cagnotte-liste" class="vide">Aucun gain enregistré.</div>
   </div>
 </div>
 
-<!-- NAV -->
 <div class="nav">
   <button class="nav-item on" id="nav-tirage" onclick="allerEcran('s-tirage')">
     <span class="nav-icon">🎱</span>Tirage
@@ -169,7 +183,6 @@ input:focus { border-color: #f5c842; }
 </div>
 
 <script>
-
 function setStatus(type, msg) {
   var el = document.getElementById('status-auto');
   el.innerHTML = msg ? '<div class="status-bar ' + type + '">' + msg + '</div>' : '';
@@ -177,7 +190,7 @@ function setStatus(type, msg) {
 
 function recupererTirage(btn) {
   btn.disabled = true;
-  setStatus('loading', '⏳ Connexion a FDJ en cours...');
+  setStatus('loading', '⏳ Connexion à FDJ en cours...');
   var url = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://www.fdj.fr/jeux-de-tirage/keno/resultats');
   fetch(url)
     .then(function(resp) {
@@ -186,23 +199,23 @@ function recupererTirage(btn) {
     })
     .then(function(txt) {
       var m = txt.match(/\\"numbers\\":\[(\\"[\d\\",]+)\]/);
-      if (!m) throw new Error('Numeros introuvables dans la page FDJ.');
+      if (!m) throw new Error('Numéros introuvables dans la page FDJ.');
       var nums = m[1].match(/\d{1,2}/g)
         .map(Number)
         .filter(function(n){ return n >= 1 && n <= 70; })
         .filter(function(n, i, a){ return a.indexOf(n) === i; });
-      if (nums.length < 10) throw new Error('Tirage incomplet : ' + nums.length + ' numeros.');
+      if (nums.length < 10) throw new Error('Tirage incomplet : ' + nums.length + ' numéros.');
       var idx = txt.indexOf('\\"numbers\\":[');
       var ctx = txt.substring(Math.max(0, idx - 400), idx);
-      var dm  = ctx.match(/(\d{4}-\d{2}-\d{2})/);
+      var dm = ctx.match(/(\d{4}-\d{2}-\d{2})/);
       var date = dm ? dm[1].split('-').reverse().join('/') : new Date().toLocaleDateString('fr-FR');
       document.getElementById('inp-tirage').value = nums.join(', ');
-      document.getElementById('inp-date').value   = date;
+      document.getElementById('inp-date').value = date;
       document.getElementById('inp-chance').value = '';
       majTirage();
       afficherGrilles();
       btn.disabled = false;
-      setStatus('success', '✓ ' + nums.length + ' numeros charges - tirage du ' + date);
+      setStatus('success', '✓ ' + nums.length + ' numéros chargés - tirage du ' + date);
     })
     .catch(function(e) {
       btn.disabled = false;
@@ -216,21 +229,25 @@ var bonusNum = null;
 var grilles = [];
 
 function charger() {
-  try { var g = localStorage.getItem('keno_grilles'); if (g) grilles = JSON.parse(g); } catch(e) { grilles = []; }
+  try {
+    var g = localStorage.getItem('keno_grilles');
+    if (g) grilles = JSON.parse(g);
+  } catch(e) { grilles = []; }
 }
+
 function enregistrer() {
   try { localStorage.setItem('keno_grilles', JSON.stringify(grilles)); } catch(e) {}
 }
 
 var ecrans = ['s-tirage','s-grilles','s-resultats','s-cagnotte'];
-var navs   = ['nav-tirage','nav-grilles','nav-resultats','nav-cagnotte'];
+var navs = ['nav-tirage','nav-grilles','nav-resultats','nav-cagnotte'];
 
 function allerEcran(id) {
-  ecrans.forEach(function(e){ document.getElementById(e).className = 'screen' + (e===id?' on':''); });
-  navs.forEach(function(n,i){ document.getElementById(n).className = 'nav-item' + (ecrans[i]===id?' on':''); });
-  if (id==='s-resultats') afficherResultats();
-  if (id==='s-grilles') majGrillesSave();
-  if (id==='s-cagnotte') chargerCagnotte();
+  ecrans.forEach(function(e){ document.getElementById(e).className = 'screen' + (e===id ? ' on' : ''); });
+  navs.forEach(function(n,i){ document.getElementById(n).className = 'nav-item' + (ecrans[i]===id ? ' on' : ''); });
+  if (id === 's-resultats') afficherResultats();
+  if (id === 's-grilles') majGrillesSave();
+  if (id === 's-cagnotte') chargerCagnotte();
 }
 
 function construireGrille(id, onclick) {
@@ -238,7 +255,7 @@ function construireGrille(id, onclick) {
   el.innerHTML = '';
   for (var i=1; i<=70; i++) {
     var b = document.createElement('div');
-    b.className = 'boule' + (selNums.indexOf(i)!==-1?' sel':'');
+    b.className = 'boule' + (selNums.indexOf(i)!==-1 ? ' sel' : '');
     b.textContent = i;
     b.setAttribute('data-n', i);
     b.onclick = onclick;
@@ -248,7 +265,8 @@ function construireGrille(id, onclick) {
 
 function toggleNum(n) {
   var idx = selNums.indexOf(n);
-  if (idx===-1) selNums.push(n); else selNums.splice(idx,1);
+  if (idx === -1) selNums.push(n);
+  else selNums.splice(idx,1);
   majToutesGrilles();
   if (document.getElementById('zone-resultat').style.display !== 'none') comparer();
 }
@@ -259,7 +277,7 @@ function majToutesGrilles() {
     if (!el) return;
     el.querySelectorAll('.boule').forEach(function(b) {
       var n = parseInt(b.getAttribute('data-n'));
-      b.className = 'boule' + (selNums.indexOf(n)!==-1?' sel':'');
+      b.className = 'boule' + (selNums.indexOf(n)!==-1 ? ' sel' : '');
     });
   });
   var c = selNums.length;
@@ -273,18 +291,20 @@ function majGrillesSave() { majToutesGrilles(); }
 
 function majTirage() {
   var raw = document.getElementById('inp-tirage').value;
-  tirageNums = raw.split(/[\s,;]+/).map(Number).filter(function(n){ return n>=1&&n<=70; });
+  tirageNums = raw.split(/[\s,;]+/).map(Number).filter(function(n){ return n>=1 && n<=70; });
   var br = document.getElementById('inp-chance').value;
   bonusNum = br ? parseInt(br) : null;
+
   var aff = document.getElementById('tirage-affiche');
   aff.innerHTML = '';
-  tirageNums.slice().sort(function(a,b){return a-b;}).forEach(function(n) {
+  tirageNums.slice().sort(function(a,b){ return a-b; }).forEach(function(n) {
     var b = document.createElement('div');
-    b.className = 'boule tirage-non' + (n===bonusNum?' chance':'');
+    b.className = 'boule tirage-non' + (n===bonusNum ? ' chance' : '');
     b.style.width='32px'; b.style.height='32px'; b.style.fontSize='11px';
     b.textContent = n;
     aff.appendChild(b);
   });
+
   if (bonusNum && tirageNums.indexOf(bonusNum)===-1) {
     var b = document.createElement('div');
     b.className = 'boule chance';
@@ -292,8 +312,9 @@ function majTirage() {
     b.textContent = bonusNum;
     aff.appendChild(b);
   }
+
   var c = document.getElementById('tirage-compte');
-  c.innerHTML = tirageNums.length + ' / 20 numéros' + (tirageNums.length===20?' <span style="color:#2ecc71">✓</span>':'');
+  c.innerHTML = tirageNums.length + ' / 20 numéros' + (tirageNums.length===20 ? ' <span style="color:#2ecc71">✓</span>' : '');
 }
 
 function viderTirage() {
@@ -306,54 +327,59 @@ function viderTirage() {
 }
 
 function comparer() {
-  if (!tirageNums.length) { alert('Saisissez d\'abord les numéros du tirage.'); return; }
+  if (!tirageNums.length) { alert("Saisissez d'abord les numéros du tirage."); return; }
   var tSet = {};
-  tirageNums.forEach(function(n){ tSet[n]=true; });
+  tirageNums.forEach(function(n){ tSet[n] = true; });
   var matches = selNums.filter(function(n){ return tSet[n]; });
   var bm = bonusNum && selNums.indexOf(bonusNum)!==-1;
+
   var grid = document.getElementById('boules-resultat');
   grid.innerHTML='';
-  tirageNums.slice().sort(function(a,b){return a-b;}).forEach(function(n) {
+  tirageNums.slice().sort(function(a,b){ return a-b; }).forEach(function(n) {
     var isM = selNums.indexOf(n)!==-1;
     var isB = n===bonusNum;
     var b = document.createElement('div');
-    b.className = 'boule ' + (isB&&isM?'chance-ok':isM?'tirage-ok':isB?'chance':'tirage-non');
+    b.className = 'boule ' + (isB && isM ? 'chance-ok' : isM ? 'tirage-ok' : isB ? 'chance' : 'tirage-non');
     b.textContent = n;
     grid.appendChild(b);
   });
+
   if (bonusNum && tirageNums.indexOf(bonusNum)===-1) {
     var b = document.createElement('div');
-    b.className = 'boule ' + (selNums.indexOf(bonusNum)!==-1?'chance-ok':'chance');
+    b.className = 'boule ' + (selNums.indexOf(bonusNum)!==-1 ? 'chance-ok' : 'chance');
     b.textContent = bonusNum;
     grid.appendChild(b);
   }
+
   var box = document.getElementById('resultat-box');
-  box.className = 'resultat-box' + (matches.length>0?' win':'');
+  box.className = 'resultat-box' + (matches.length>0 ? ' win' : '');
   document.getElementById('resultat-chiffre').textContent = matches.length;
   document.getElementById('resultat-texte').textContent = 'correspondance(s) sur ' + selNums.length + ' numéro(s)';
-  document.getElementById('chance-msg').style.display = bm?'':'none';
+  document.getElementById('chance-msg').style.display = bm ? '' : 'none';
   document.getElementById('zone-resultat').style.display='';
-  document.getElementById('zone-resultat').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('zone-resultat').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 function viderRapide() {
   selNums=[];
   majToutesGrilles();
-  if (document.getElementById('zone-resultat').style.display!=='none') comparer();
+  if (document.getElementById('zone-resultat').style.display !== 'none') comparer();
 }
 
 function sauvegarder() {
   if (!selNums.length) { alert('Sélectionnez au moins un numéro.'); return; }
-  var nom = document.getElementById('inp-nom').value.trim() || ('Grille '+(grilles.length+1));
-  grilles.push({ nom:nom, nums:selNums.slice().sort(function(a,b){return a-b;}), date:new Date().toLocaleDateString('fr-FR') });
+  var nom = document.getElementById('inp-nom').value.trim() || ('Grille ' + (grilles.length+1));
+  grilles.push({ nom: nom, nums: selNums.slice().sort(function(a,b){ return a-b; }), date: new Date().toLocaleDateString('fr-FR') });
   enregistrer();
   document.getElementById('inp-nom').value='';
   afficherGrilles();
 }
 
 function supprimerGrille(i) {
-  if (!confirm('Supprimer "'+grilles[i].nom+'" ?')) return;
-  grilles.splice(i,1); enregistrer(); afficherGrilles();
+  if (!confirm('Supprimer "' + grilles[i].nom + '" ?')) return;
+  grilles.splice(i,1);
+  enregistrer();
+  afficherGrilles();
 }
 
 function utiliserGrille(i) {
@@ -364,30 +390,33 @@ function utiliserGrille(i) {
 
 function afficherGrilles() {
   var el = document.getElementById('liste-grilles');
-  if (!grilles.length) { el.innerHTML='<div class="vide">Aucune grille sauvegardée.<br>Sélectionnez des numéros ci-dessus puis appuyez sur Sauvegarder.</div>'; return; }
+  if (!grilles.length) {
+    el.innerHTML = '<div class="vide">Aucune grille sauvegardée.<br>Sélectionnez des numéros ci-dessus puis appuyez sur Sauvegarder.</div>';
+    return;
+  }
   var tSet = {};
-  tirageNums.forEach(function(n){ tSet[n]=true; });
+  tirageNums.forEach(function(n){ tSet[n] = true; });
   var hasTirage = tirageNums.length > 0;
   el.innerHTML='';
   grilles.forEach(function(g,i) {
     var matches = hasTirage ? g.nums.filter(function(n){ return tSet[n]; }) : [];
     var bm = bonusNum && g.nums.indexOf(bonusNum)!==-1;
     var div = document.createElement('div');
-    div.className = 'grille' + (matches.length>0?' win':'');
-    var badgeHtml = hasTirage ? '<span class="badge '+(matches.length?'win':'')+'">'+matches.length+' match'+(bm?' +⭐':'')+' </span>' : '';
+    div.className = 'grille' + (matches.length>0 ? ' win' : '');
+    var badgeHtml = hasTirage ? '<span class="badge ' + (matches.length ? 'win' : '') + '">' + matches.length + ' match' + (bm ? ' +⭐' : '') + ' </span>' : '';
     div.innerHTML = '<div class="grille-entete">'
-      +'<span class="grille-nom">'+g.nom+'</span>'
-      +badgeHtml
-      +'<button class="btn" style="padding:5px 10px;font-size:12px" onclick="utiliserGrille('+i+')">Utiliser</button>'
-      +'<button class="btn rouge" style="padding:5px 10px;font-size:12px" onclick="supprimerGrille('+i+')">✕</button>'
-      +'</div>'
-      +'<div class="mini-boules">'
-      +g.nums.map(function(n){
-        var m=hasTirage&&tSet[n], isb=bonusNum&&n===bonusNum;
-        return '<div class="mb '+(isb&&m?'chance-ok':m?'ok':'')+'">' +n+'</div>';
+      + '<span class="grille-nom">' + g.nom + '</span>'
+      + badgeHtml
+      + '<button class="btn" style="padding:5px 10px;font-size:12px" onclick="utiliserGrille(' + i + ')">Utiliser</button>'
+      + '<button class="btn rouge" style="padding:5px 10px;font-size:12px" onclick="supprimerGrille(' + i + ')">✕</button>'
+      + '</div>'
+      + '<div class="mini-boules">'
+      + g.nums.map(function(n){
+        var m = hasTirage && tSet[n], isb = bonusNum && n===bonusNum;
+        return '<div class="mb ' + (isb && m ? 'chance-ok' : m ? 'ok' : '') + '">' + n + '</div>';
       }).join('')
-      +'</div>'
-      +'<div style="font-size:11px;color:#5a7a9a;margin-top:6px">'+g.date+' · '+g.nums.length+' numéros</div>';
+      + '</div>'
+      + '<div style="font-size:11px;color:#5a7a9a;margin-top:6px">' + g.date + ' · ' + g.nums.length + ' numéros</div>';
     el.appendChild(div);
   });
 }
@@ -396,75 +425,107 @@ function afficherResultats() {
   var el = document.getElementById('res-grilles');
   var ra = document.getElementById('res-tirage-affiche');
   var rd = document.getElementById('res-date');
+
   ra.innerHTML='';
-  tirageNums.slice().sort(function(a,b){return a-b;}).forEach(function(n){
-    var b=document.createElement('div');
-    b.className='boule tirage-non'+(n===bonusNum?' chance':'');
+  tirageNums.slice().sort(function(a,b){ return a-b; }).forEach(function(n){
+    var b = document.createElement('div');
+    b.className = 'boule tirage-non' + (n===bonusNum ? ' chance' : '');
     b.style.width='30px'; b.style.height='30px'; b.style.fontSize='11px';
-    b.textContent=n; ra.appendChild(b);
+    b.textContent = n;
+    ra.appendChild(b);
   });
-  var dateStr=document.getElementById('inp-date').value;
-  rd.textContent = dateStr?'Tirage du '+dateStr:(tirageNums.length?tirageNums.length+' numéros saisis':'Aucun tirage saisi');
-  if (!grilles.length){ el.innerHTML='<div class="vide">Aucune grille sauvegardée.</div>'; return; }
-  if (!tirageNums.length){ el.innerHTML='<div class="vide">Saisissez d\'abord le tirage dans l\'onglet Tirage.</div>'; return; }
-  var tSet={};
-  tirageNums.forEach(function(n){ tSet[n]=true; });
-  var sorted=grilles.map(function(g,i){ return {g:g,i:i,m:g.nums.filter(function(n){return tSet[n];}),bm:bonusNum&&g.nums.indexOf(bonusNum)!==-1}; });
-  sorted.sort(function(a,b){ return b.m.length-a.m.length; });
+
+  var dateStr = document.getElementById('inp-date').value;
+  rd.textContent = dateStr ? 'Tirage du ' + dateStr : (tirageNums.length ? tirageNums.length + ' numéros saisis' : 'Aucun tirage saisi');
+
+  if (!grilles.length) { el.innerHTML = '<div class="vide">Aucune grille sauvegardée.</div>'; return; }
+  if (!tirageNums.length) { el.innerHTML = '<div class="vide">Saisissez d\'abord le tirage dans l\'onglet Tirage.</div>'; return; }
+
+  var tSet = {};
+  tirageNums.forEach(function(n){ tSet[n] = true; });
+  var sorted = grilles.map(function(g,i){
+    return { g:g, i:i, m:g.nums.filter(function(n){ return tSet[n]; }), bm: bonusNum && g.nums.indexOf(bonusNum)!==-1 };
+  });
+  sorted.sort(function(a,b){ return b.m.length - a.m.length; });
+
   el.innerHTML='';
   sorted.forEach(function(item){
-    var div=document.createElement('div');
-    div.className='grille'+(item.m.length>0?' win':'');
-    div.innerHTML='<div class="grille-entete">'
-      +'<span class="grille-nom">'+item.g.nom+'</span>'
-      +'<span class="badge '+(item.m.length?'win':'')+'">'+item.m.length+' correspondance(s)'+(item.bm?' ⭐':'')+' </span>'
-      +'</div>'
-      +'<div class="mini-boules">'
-      +item.g.nums.map(function(n){
-        var m=tSet[n],isb=bonusNum&&n===bonusNum;
-        return '<div class="mb '+(isb&&m?'chance-ok':m?'ok':'')+'">' +n+'</div>';
+    var div = document.createElement('div');
+    div.className = 'grille' + (item.m.length>0 ? ' win' : '');
+    div.innerHTML = '<div class="grille-entete">'
+      + '<span class="grille-nom">' + item.g.nom + '</span>'
+      + '<span class="badge ' + (item.m.length ? 'win' : '') + '">' + item.m.length + ' correspondance(s)' + (item.bm ? ' ⭐' : '') + ' </span>'
+      + '</div>'
+      + '<div class="mini-boules">'
+      + item.g.nums.map(function(n){
+        var m = tSet[n], isb = bonusNum && n===bonusNum;
+        return '<div class="mb ' + (isb && m ? 'chance-ok' : m ? 'ok' : '') + '">' + n + '</div>';
       }).join('')
-      +'</div>';
+      + '</div>';
     el.appendChild(div);
   });
 }
 
+function getCagnotteData() {
+  try {
+    var raw = localStorage.getItem('keno_cagnotte');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { total: 0, historique: [] };
+}
+
+function saveCagnotteData(data) {
+  localStorage.setItem('keno_cagnotte', JSON.stringify(data));
+}
+
 function chargerCagnotte() {
-  fetch('gains.json?t=' + Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      document.getElementById('cagnotte-total').textContent = d.total + '€';
-      document.getElementById('cagnotte-jours').textContent = d.historique.length + ' tirage(s) enregistré(s)';
-      var el = document.getElementById('cagnotte-liste');
-      if (!d.historique.length) {
-        el.className = 'vide';
-        el.textContent = 'Aucun tirage enregistré.';
-        return;
-      }
-      var best = d.historique.reduce(function(a,b){ return a.count > b.count ? a : b; });
-      el.className = '';
-      el.innerHTML = '<div style="background:#1a4a2e;border:1px solid #2ecc71;border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;color:#6ee89a">'
-        + '🏆 Meilleur : ' + best.count + '/10 le ' + best.date + ' (' + best.gain + ')'
-        + '</div>'
-        + d.historique.map(function(h){
-          return '<div class="grille' + (h.count >= 6 ? ' win' : '') + '">'
-            + '<div class="grille-entete">'
-            + '<span class="grille-nom">' + h.date + '</span>'
-            + '<span class="badge' + (h.count >= 6 ? ' win' : '') + '">' + h.count + '/10 — ' + h.gain + '</span>'
-            + '</div>'
-            + (h.numeros ? '<div style="font-size:11px;color:#5a7a9a;margin-top:4px">Bons n° : ' + h.numeros + '</div>' : '')
-            + '</div>';
-        }).join('');
-    })
-    .catch(function() {
-      document.getElementById('cagnotte-total').textContent = '2€';
-      document.getElementById('cagnotte-jours').textContent = 'Données locales';
-      document.getElementById('cagnotte-liste').innerHTML = '<div class="vide">gains.json non disponible localement.<br>Chargé depuis GitHub Pages.</div>';
-    });
+  var d = getCagnotteData();
+  document.getElementById('cagnotte-total').textContent = d.total + '€';
+  document.getElementById('cagnotte-jours').textContent = d.historique.length + ' entrée' + (d.historique.length > 1 ? 's' : '') + ' enregistrée' + (d.historique.length > 1 ? 's' : '');
+
+  var el = document.getElementById('cagnotte-liste');
+  if (!d.historique.length) {
+    el.className = 'vide';
+    el.textContent = 'Aucun gain enregistré.';
+    return;
+  }
+
+  el.className = '';
+  el.innerHTML = d.historique.map(function(h) {
+    return '<div class="grille win">'
+      + '<div class="grille-entete">'
+      + '<span class="grille-nom">' + h.date + '</span>'
+      + '<span class="badge win">+' + h.gain + '€</span>'
+      + '</div>'
+      + (h.note ? '<div style="font-size:11px;color:#5a7a9a;margin-top:4px">' + h.note + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function ajouterGain(montant) {
+  var d = getCagnotteData();
+  var now = new Date();
+  var date = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  d.total += montant;
+  d.historique.unshift({
+    date: date,
+    gain: montant,
+    note: 'Ajout manuel'
+  });
+  d.historique = d.historique.slice(0, 30);
+  saveCagnotteData(d);
+  chargerCagnotte();
+}
+
+function resetCagnotte() {
+  if (!confirm('Voulez-vous vraiment remettre la cagnotte à 0€ ?')) return;
+  var d = { total: 0, historique: [] };
+  saveCagnotteData(d);
+  chargerCagnotte();
 }
 
 charger();
-var fnClick1 = function(e){ var n=parseInt(e.currentTarget.getAttribute('data-n')); toggleNum(n); };
+var fnClick1 = function(e) { var n = parseInt(e.currentTarget.getAttribute('data-n')); toggleNum(n); };
 construireGrille('grille-rapide', fnClick1);
 construireGrille('grille-save', fnClick1);
 afficherGrilles();
